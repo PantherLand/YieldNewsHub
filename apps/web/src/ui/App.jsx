@@ -1177,6 +1177,19 @@ function App() {
   // TVL and APY filters
   const [minTvl, setMinTvl] = useState(1); // in millions
   const [minApy, setMinApy] = useState(3); // in percentage
+  // Chain filter
+  const [selectedChain, setSelectedChain] = useState('all');
+
+  // Get available chains from data
+  const availableChains = useMemo(() => {
+    const chains = new Set();
+    apy.forEach((item) => {
+      if (item.chain && item.chain.toLowerCase() !== 'cefi') {
+        chains.add(item.chain);
+      }
+    });
+    return Array.from(chains).sort();
+  }, [apy]);
 
   const tabs = useMemo(() => [
     { id: 'apy', name: 'Yields', icon: '$' },
@@ -1231,6 +1244,11 @@ function App() {
       result = result.filter((x) => String(x.chain || '').toLowerCase() !== 'cefi');
     }
 
+    // Apply chain filter (only for DEX)
+    if (apyFilter === 'dex' && selectedChain !== 'all') {
+      result = result.filter((x) => x.chain === selectedChain);
+    }
+
     // Apply TVL filter (minTvl is in millions)
     if (minTvl > 0) {
       result = result.filter((x) => (x.tvlUsd || 0) >= minTvl * 1_000_000);
@@ -1242,7 +1260,7 @@ function App() {
     }
 
     return result;
-  }, [apy, apyFilter, minTvl, minApy]);
+  }, [apy, apyFilter, selectedChain, minTvl, minApy]);
 
   useEffect(() => {
     if (tab === 'news') loadNews().catch(() => {});
@@ -1353,6 +1371,44 @@ function App() {
                   </button>
                 ))}
               </div>
+
+              {/* Chain Filter - only show for DEX */}
+              {apyFilter === 'dex' && availableChains.length > 0 && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: theme.spacing.sm }}>
+                  <span style={{
+                    color: theme.colors.textMuted,
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    textTransform: 'uppercase',
+                    letterSpacing: '1px',
+                  }}>Chain:</span>
+                  <select
+                    value={selectedChain}
+                    onChange={(e) => setSelectedChain(e.target.value)}
+                    style={{
+                      padding: '8px 12px',
+                      borderRadius: theme.radius.md,
+                      border: `1px solid ${theme.colors.border}`,
+                      background: theme.colors.bgInput,
+                      color: theme.colors.textPrimary,
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      outline: 'none',
+                      cursor: 'pointer',
+                      minWidth: '120px',
+                    }}
+                  >
+                    <option value="all">All Chains</option>
+                    {availableChains.map((chain) => (
+                      <option key={chain} value={chain} style={{
+                        color: CHAIN_COLORS[chain] || theme.colors.textPrimary,
+                      }}>
+                        {chain}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               {/* TVL Filter */}
               <div style={{ display: 'flex', alignItems: 'center', gap: theme.spacing.sm }}>
