@@ -1,162 +1,7 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { LOGOS } from './logos.js';
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8787';
-
-// ============================================
-// Internationalization (i18n) Configuration
-// ============================================
-
-const translations = {
-  en: {
-    // Header
-    appName: 'YieldNewsHub',
-    subtitle: 'Low-risk stablecoin yields & market intelligence',
-
-    // Navigation tabs
-    tabYield: 'Yield Opportunities',
-    tabNews: 'Market News',
-    tabSettings: 'Settings',
-
-    // Buttons
-    refresh: 'Refresh',
-    loading: 'Loading...',
-
-    // APY Table
-    provider: 'Provider',
-    symbol: 'Symbol',
-    apy: 'APY',
-    tvl: 'TVL',
-    riskAssessment: 'Risk Assessment',
-    noData: 'No data available',
-    standardRisk: 'Standard DeFi risk',
-
-    // News List
-    minScore: 'Minimum Score:',
-    scoreHint: '1 = all news, 10 = most important only',
-    noNews: 'No news matching your criteria',
-    unknown: 'Unknown',
-
-    // Stats Bar
-    activeYieldOpportunities: 'Active Yield Opportunities',
-    newsArticles: 'News Articles',
-    dataUpdates: 'Data Updates',
-    realTime: 'Real-time',
-
-    // Settings
-    telegramIntegration: 'Telegram Integration',
-    enableTelegram: 'Enable Telegram notifications for important news',
-    botToken: 'Bot Token',
-    chatId: 'Chat ID',
-    saveSettings: 'Save Settings',
-    saving: 'Saving...',
-    sendTestMessage: 'Send Test Message',
-    settingsSaved: '✓ Settings saved successfully',
-    testMessageSent: '✓ Test message sent!',
-    settingsNote: 'This is an MVP feature. Telegram credentials are stored in the database. For production use, consider implementing proper secret management.',
-    note: 'Note:',
-
-    // Footer
-    connectedTo: 'Connected to:',
-    builtWith: 'Built with 💙 for DeFi',
-
-    // Language toggle
-    language: 'EN',
-  },
-  zh: {
-    // Header
-    appName: 'YieldNewsHub',
-    subtitle: '低风险稳定币收益与市场情报',
-
-    // Navigation tabs
-    tabYield: '收益机会',
-    tabNews: '市场新闻',
-    tabSettings: '设置',
-
-    // Buttons
-    refresh: '刷新',
-    loading: '加载中...',
-
-    // APY Table
-    provider: '提供商',
-    symbol: '代币',
-    apy: '年化收益率',
-    tvl: '锁仓量',
-    riskAssessment: '风险评估',
-    noData: '暂无数据',
-    standardRisk: '标准 DeFi 风险',
-
-    // News List
-    minScore: '最低评分：',
-    scoreHint: '1 = 全部新闻，10 = 仅最重要新闻',
-    noNews: '没有符合条件的新闻',
-    unknown: '未知',
-
-    // Stats Bar
-    activeYieldOpportunities: '活跃收益机会',
-    newsArticles: '新闻文章',
-    dataUpdates: '数据更新',
-    realTime: '实时',
-
-    // Settings
-    telegramIntegration: 'Telegram 集成',
-    enableTelegram: '为重要新闻启用 Telegram 通知',
-    botToken: '机器人令牌',
-    chatId: '聊天 ID',
-    saveSettings: '保存设置',
-    saving: '保存中...',
-    sendTestMessage: '发送测试消息',
-    settingsSaved: '✓ 设置保存成功',
-    testMessageSent: '✓ 测试消息已发送！',
-    settingsNote: '这是 MVP 功能。Telegram 凭据存储在数据库中。对于生产环境使用，请考虑实施适当的密钥管理。',
-    note: '注意：',
-
-    // Footer
-    connectedTo: '已连接至：',
-    builtWith: '为 DeFi 倾心打造 💙',
-
-    // Language toggle
-    language: '中',
-  },
-};
-
-// Language Context
-const LanguageContext = createContext();
-
-function LanguageProvider({ children }) {
-  const [language, setLanguage] = useState(() => {
-    // Check localStorage for saved preference, default to 'en'
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('ynh-language') || 'en';
-    }
-    return 'en';
-  });
-
-  const toggleLanguage = () => {
-    const newLang = language === 'en' ? 'zh' : 'en';
-    setLanguage(newLang);
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('ynh-language', newLang);
-    }
-  };
-
-  const t = (key) => {
-    return translations[language][key] || key;
-  };
-
-  return (
-    <LanguageContext.Provider value={{ language, toggleLanguage, t }}>
-      {children}
-    </LanguageContext.Provider>
-  );
-}
-
-function useLanguage() {
-  const context = useContext(LanguageContext);
-  if (!context) {
-    throw new Error('useLanguage must be used within a LanguageProvider');
-  }
-  return context;
-}
 
 // Morpho-inspired Design System
 const theme = {
@@ -479,38 +324,6 @@ const styles = {
   },
 };
 
-// Language Toggle Button Component
-function LanguageToggle() {
-  const { language, toggleLanguage, t } = useLanguage();
-
-  const toggleStyles = {
-    button: {
-      padding: '8px 14px',
-      borderRadius: theme.radius.md,
-      border: `1px solid ${theme.colors.border}`,
-      background: theme.colors.bgCard,
-      color: theme.colors.textSecondary,
-      cursor: 'pointer',
-      fontSize: '14px',
-      fontWeight: 600,
-      transition: theme.transition.fast,
-      display: 'flex',
-      alignItems: 'center',
-      gap: '6px',
-    },
-    flag: {
-      fontSize: '16px',
-    },
-  };
-
-  return (
-    <button onClick={toggleLanguage} style={toggleStyles.button} title={language === 'en' ? 'Switch to Chinese' : '切换到英文'}>
-      <span style={toggleStyles.flag}>🌐</span>
-      <span>{t('language')}</span>
-    </button>
-  );
-}
-
 function fmtUsd(x) {
   if (x == null || Number.isNaN(Number(x))) return '-';
   const v = Number(x);
@@ -522,7 +335,6 @@ function fmtUsd(x) {
 
 // APY Table Component
 function ApyTable({ data }) {
-  const { t } = useLanguage();
   const [hoveredRow, setHoveredRow] = useState(null);
 
   const tableStyles = {
@@ -579,15 +391,15 @@ function ApyTable({ data }) {
   return (
     <div style={styles.card}>
       <div style={tableStyles.header}>
-        <div>{t('provider')}</div>
-        <div>{t('symbol')}</div>
-        <div>{t('apy')}</div>
-        <div>{t('tvl')}</div>
-        <div>{t('riskAssessment')}</div>
+        <div>Platform</div>
+        <div>Symbol</div>
+        <div>APY</div>
+        <div>TVL</div>
+        <div>Risk Assessment</div>
       </div>
       {data.length === 0 ? (
         <div style={{ padding: theme.spacing.xl, textAlign: 'center', color: theme.colors.textMuted }}>
-          {t('noData')}
+          No data available
         </div>
       ) : (
         data.map((row, idx) => (
@@ -598,7 +410,9 @@ function ApyTable({ data }) {
             onMouseLeave={() => setHoveredRow(null)}
           >
             <div style={{ display: 'flex', gap: theme.spacing.md, alignItems: 'center' }}>
-              {row.logoUrl ? (
+              {row.logoKey && LOGOS[row.logoKey] ? (
+                <img src={LOGOS[row.logoKey]} alt={row.platformName || row.provider} width={22} height={22} style={{ borderRadius: theme.radius.md }} />
+              ) : row.logoUrl ? (
                 <img src={row.logoUrl} alt={row.platformName || row.provider} width={22} height={22} style={{ borderRadius: theme.radius.md }} />
               ) : (
                 <div style={{ width: 22, height: 22, borderRadius: theme.radius.md, background: theme.colors.border }} />
@@ -618,7 +432,7 @@ function ApyTable({ data }) {
             <div style={tableStyles.symbol}>{row.symbol}</div>
             <div style={tableStyles.apy}>{row.apy == null ? '—' : `${Number(row.apy).toFixed(2)}%`}</div>
             <div style={tableStyles.tvl}>{fmtUsd(row.tvlUsd)}</div>
-            <div style={tableStyles.risk}>{row.riskNote || t('standardRisk')}</div>
+            <div style={tableStyles.risk}>{row.riskNote || 'Standard risk'}</div>
           </div>
         ))
       )}
@@ -628,7 +442,6 @@ function ApyTable({ data }) {
 
 // News Card Component
 function NewsCard({ item }) {
-  const { t } = useLanguage();
   const [isHovered, setIsHovered] = useState(false);
 
   const cardStyles = {
@@ -726,7 +539,7 @@ function NewsCard({ item }) {
         </div>
       </div>
       <div style={cardStyles.meta}>
-        <span style={cardStyles.source}>{item.source?.name || t('unknown')}</span>
+        <span style={cardStyles.source}>{item.source?.name || 'Unknown'}</span>
         <span>•</span>
         <span>{item.publishedAt ? new Date(item.publishedAt).toLocaleString() : '—'}</span>
       </div>
@@ -744,7 +557,6 @@ function NewsCard({ item }) {
 
 // News List Component
 function NewsList({ data, minScore, setMinScore }) {
-  const { t } = useLanguage();
   const filterStyles = {
     container: {
       display: 'flex',
@@ -785,7 +597,7 @@ function NewsList({ data, minScore, setMinScore }) {
   return (
     <div>
       <div style={filterStyles.container}>
-        <span style={filterStyles.label}>{t('minScore')}</span>
+        <span style={filterStyles.label}>Minimum Score:</span>
         <input
           type="number"
           value={minScore}
@@ -794,12 +606,12 @@ function NewsList({ data, minScore, setMinScore }) {
           min={1}
           max={10}
         />
-        <span style={filterStyles.hint}>{t('scoreHint')}</span>
+        <span style={filterStyles.hint}>1 = all news, 10 = most important only</span>
       </div>
       <div style={filterStyles.grid}>
         {data.length === 0 ? (
           <div style={{ padding: theme.spacing.xl, textAlign: 'center', color: theme.colors.textMuted }}>
-            {t('noNews')}
+            No news matching your criteria
           </div>
         ) : (
           data.map(item => <NewsCard key={item.id} item={item} />)
@@ -811,13 +623,11 @@ function NewsList({ data, minScore, setMinScore }) {
 
 // Settings Component
 function Settings({ apiBase }) {
-  const { t } = useLanguage();
   const [botToken, setBotToken] = useState('');
   const [chatId, setChatId] = useState('');
   const [enabled, setEnabled] = useState(false);
   const [msg, setMsg] = useState('');
   const [loading, setLoading] = useState(false);
-  const [msgKey, setMsgKey] = useState('');
 
   const settingsStyles = {
     container: {
@@ -931,7 +741,6 @@ function Settings({ apiBase }) {
   async function save() {
     setLoading(true);
     setMsg('');
-    setMsgKey('');
     try {
       const r = await fetch(`${apiBase}/api/integrations/telegram`, {
         method: 'POST',
@@ -939,11 +748,7 @@ function Settings({ apiBase }) {
         body: JSON.stringify({ enabled, botToken, chatId }),
       });
       const j = await r.json();
-      if (j.ok) {
-        setMsgKey('settingsSaved');
-      } else {
-        setMsg(`Error: ${JSON.stringify(j)}`);
-      }
+      setMsg(j.ok ? '✓ Settings saved successfully' : `Error: ${JSON.stringify(j)}`);
     } catch (e) {
       setMsg(`Error: ${e.message}`);
     }
@@ -953,28 +758,21 @@ function Settings({ apiBase }) {
   async function test() {
     setLoading(true);
     setMsg('');
-    setMsgKey('');
     try {
       const r = await fetch(`${apiBase}/api/integrations/telegram/test`, { method: 'POST' });
       const j = await r.json();
-      if (j.ok) {
-        setMsgKey('testMessageSent');
-      } else {
-        setMsg(`Error: ${JSON.stringify(j)}`);
-      }
+      setMsg(j.ok ? '✓ Test message sent!' : `Error: ${JSON.stringify(j)}`);
     } catch (e) {
       setMsg(`Error: ${e.message}`);
     }
     setLoading(false);
   }
 
-  const displayMsg = msgKey ? t(msgKey) : msg;
-
   return (
     <div style={settingsStyles.container}>
       <div style={settingsStyles.title}>
         <span style={settingsStyles.icon}>✈</span>
-        {t('telegramIntegration')}
+        Telegram Integration
       </div>
 
       <div style={settingsStyles.section}>
@@ -985,13 +783,13 @@ function Settings({ apiBase }) {
             onChange={(e) => setEnabled(e.target.checked)}
             style={settingsStyles.checkbox}
           />
-          {t('enableTelegram')}
+          Enable Telegram notifications for important news
         </label>
       </div>
 
       <div style={settingsStyles.grid}>
         <div style={settingsStyles.inputGroup}>
-          <div style={settingsStyles.inputLabel}>{t('botToken')}</div>
+          <div style={settingsStyles.inputLabel}>Bot Token</div>
           <input
             value={botToken}
             onChange={(e) => setBotToken(e.target.value)}
@@ -1000,7 +798,7 @@ function Settings({ apiBase }) {
           />
         </div>
         <div style={settingsStyles.inputGroup}>
-          <div style={settingsStyles.inputLabel}>{t('chatId')}</div>
+          <div style={settingsStyles.inputLabel}>Chat ID</div>
           <input
             value={chatId}
             onChange={(e) => setChatId(e.target.value)}
@@ -1012,20 +810,21 @@ function Settings({ apiBase }) {
 
       <div style={settingsStyles.actions}>
         <button onClick={save} disabled={loading} style={settingsStyles.primaryButton}>
-          {loading ? t('saving') : t('saveSettings')}
+          {loading ? 'Saving...' : 'Save Settings'}
         </button>
         <button onClick={test} disabled={loading} style={settingsStyles.secondaryButton}>
-          {t('sendTestMessage')}
+          Send Test Message
         </button>
-        {displayMsg && (
-          <div style={settingsStyles.message(displayMsg.includes('Error'))}>
-            {displayMsg}
+        {msg && (
+          <div style={settingsStyles.message(msg.includes('Error'))}>
+            {msg}
           </div>
         )}
       </div>
 
       <div style={settingsStyles.note}>
-        <strong>{t('note')}</strong> {t('settingsNote')}
+        <strong>Note:</strong> This is an MVP feature. Telegram credentials are stored in the database.
+        For production use, consider implementing proper secret management.
       </div>
     </div>
   );
@@ -1033,7 +832,6 @@ function Settings({ apiBase }) {
 
 // Stats Bar Component
 function StatsBar({ apyCount, newsCount }) {
-  const { t } = useLanguage();
   const statsStyles = {
     container: {
       display: 'grid',
@@ -1076,42 +874,42 @@ function StatsBar({ apyCount, newsCount }) {
       <div style={statsStyles.card}>
         <div style={{ ...statsStyles.icon, background: 'rgba(16, 185, 129, 0.2)' }}>📈</div>
         <div>
-          <div style={statsStyles.label}>{t('activeYieldOpportunities')}</div>
+          <div style={statsStyles.label}>Active Yield Opportunities</div>
           <div style={statsStyles.value}>{apyCount}</div>
         </div>
       </div>
       <div style={statsStyles.card}>
         <div style={{ ...statsStyles.icon, background: 'rgba(37, 99, 235, 0.2)' }}>📰</div>
         <div>
-          <div style={statsStyles.label}>{t('newsArticles')}</div>
+          <div style={statsStyles.label}>News Articles</div>
           <div style={statsStyles.value}>{newsCount}</div>
         </div>
       </div>
       <div style={statsStyles.card}>
         <div style={{ ...statsStyles.icon, background: 'rgba(245, 158, 11, 0.2)' }}>🔄</div>
         <div>
-          <div style={statsStyles.label}>{t('dataUpdates')}</div>
-          <div style={statsStyles.value}>{t('realTime')}</div>
+          <div style={statsStyles.label}>Data Updates</div>
+          <div style={statsStyles.value}>Real-time</div>
         </div>
       </div>
     </div>
   );
 }
 
-// Main App Content Component
-function AppContent() {
-  const { t } = useLanguage();
+// Main App Component
+function App() {
   const [tab, setTab] = useState('apy');
   const [apy, setApy] = useState([]);
   const [news, setNews] = useState([]);
   const [minScore, setMinScore] = useState(6);
   const [err, setErr] = useState('');
   const [loading, setLoading] = useState(false);
+  const [apyFilter, setApyFilter] = useState('all'); // all | cex | dex
 
   const tabs = useMemo(() => [
-    { id: 'apy', nameKey: 'tabYield', icon: '📊' },
-    { id: 'news', nameKey: 'tabNews', icon: '📰' },
-    { id: 'settings', nameKey: 'tabSettings', icon: '⚙' },
+    { id: 'apy', name: 'Yield Opportunities', icon: '📊' },
+    { id: 'news', name: 'Market News', icon: '📰' },
+    { id: 'settings', name: 'Settings', icon: '⚙' },
   ], []);
 
   async function loadApy() {
@@ -1142,6 +940,13 @@ function AppContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const filteredApy = useMemo(() => {
+    if (apyFilter === 'all') return apy;
+    if (apyFilter === 'cex') return apy.filter((x) => String(x.chain || '').toLowerCase() === 'cefi');
+    if (apyFilter === 'dex') return apy.filter((x) => String(x.chain || '').toLowerCase() !== 'cefi');
+    return apy;
+  }, [apy, apyFilter]);
+
   useEffect(() => {
     if (tab === 'news') loadNews().catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1160,21 +965,21 @@ function AppContent() {
               <LogoIcon size={48} />
             </div>
             <div>
-              <h1 style={styles.title}>{t('appName')}</h1>
-              <div style={styles.subtitle}>{t('subtitle')}</div>
+              <h1 style={styles.title}>YieldNewsHub</h1>
+              <div style={styles.subtitle}>Low-risk stablecoin yields & market intelligence</div>
             </div>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: theme.spacing.md }}>
             <div style={styles.nav}>
-              {tabs.map(tabItem => (
+              {tabs.map(t => (
                 <button
-                  key={tabItem.id}
-                  onClick={() => setTab(tabItem.id)}
-                  style={styles.navButton(tab === tabItem.id)}
+                  key={t.id}
+                  onClick={() => setTab(t.id)}
+                  style={styles.navButton(tab === t.id)}
                 >
-                  <span style={{ marginRight: '6px' }}>{tabItem.icon}</span>
-                  {t(tabItem.nameKey)}
+                  <span style={{ marginRight: '6px' }}>{t.icon}</span>
+                  {t.name}
                 </button>
               ))}
             </div>
@@ -1191,10 +996,8 @@ function AppContent() {
                 display: 'inline-block',
                 animation: loading ? 'spin 1s linear infinite' : 'none',
               }}>↻</span>
-              {loading ? t('loading') : t('refresh')}
+              {loading ? 'Loading...' : 'Refresh'}
             </button>
-
-            <LanguageToggle />
           </div>
         </div>
 
@@ -1207,14 +1010,34 @@ function AppContent() {
         {err && <div style={styles.error}>⚠ {err}</div>}
 
         {/* Content */}
-        {tab === 'apy' && <ApyTable data={apy} />}
+        {tab === 'apy' && (
+          <div style={{ display: 'grid', gap: theme.spacing.lg }}>
+            <div style={{ display: 'flex', gap: theme.spacing.sm, flexWrap: 'wrap', alignItems: 'center' }}>
+              <span style={{ color: theme.colors.textMuted, fontSize: 13 }}>Filter:</span>
+              {[
+                { id: 'all', label: 'ALL' },
+                { id: 'cex', label: 'CEX' },
+                { id: 'dex', label: 'DEX' },
+              ].map((f) => (
+                <button
+                  key={f.id}
+                  onClick={() => setApyFilter(f.id)}
+                  style={styles.badge(apyFilter === f.id ? 'primary' : 'default')}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+            <ApyTable data={filteredApy} />
+          </div>
+        )}
         {tab === 'news' && <NewsList data={news} minScore={minScore} setMinScore={setMinScore} />}
         {tab === 'settings' && <Settings apiBase={API_BASE} />}
 
         {/* Footer */}
         <div style={styles.footer}>
           <div>
-            <span style={{ color: theme.colors.accent }}>●</span> {t('connectedTo')} <code style={{
+            <span style={{ color: theme.colors.accent }}>●</span> Connected to: <code style={{
               fontFamily: theme.fonts.mono,
               background: theme.colors.bgCard,
               padding: '2px 8px',
@@ -1223,7 +1046,7 @@ function AppContent() {
             }}>{API_BASE}</code>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: theme.spacing.md }}>
-            <span>{t('builtWith')}</span>
+            <span>Built with 💙 for DeFi</span>
             <span style={styles.badge('primary')}>v1.0 MVP</span>
           </div>
         </div>
@@ -1279,15 +1102,6 @@ function AppContent() {
         }
       `}</style>
     </div>
-  );
-}
-
-// Main App Component with Language Provider
-function App() {
-  return (
-    <LanguageProvider>
-      <AppContent />
-    </LanguageProvider>
   );
 }
 

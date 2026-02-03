@@ -4,17 +4,17 @@
 export const PLATFORM_META = {
   binance: {
     name: 'Binance',
-    logoUrl: 'https://cdn.simpleicons.org/binance',
+    logoKey: 'binance',
     homeUrl: 'https://www.binance.com/en/earn',
   },
   okx: {
     name: 'OKX',
-    logoUrl: 'https://cdn.simpleicons.org/okx',
+    logoKey: 'okx',
     homeUrl: 'https://www.okx.com/earn',
   },
   bybit: {
     name: 'Bybit',
-    logoUrl: 'https://cdn.simpleicons.org/bybit',
+    logoKey: 'bybit',
     homeUrl: 'https://www.bybit.com/en/earn/',
   },
   defillama: {

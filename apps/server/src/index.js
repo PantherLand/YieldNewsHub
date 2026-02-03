@@ -48,6 +48,7 @@ app.get('/api/apy', async (req, res) => {
       ...it,
       platformKey: key,
       platformName: meta?.name || null,
+      logoKey: meta?.logoKey || null,
       logoUrl: meta?.logoUrl || null,
       platformUrl: it.url || meta?.homeUrl || null,
     };
