@@ -5,27 +5,27 @@ export const LOGOS = {
   okx: '/logos/okx.svg',
   bybit: '/logos/bybit.svg',
 
-  // DeFi protocols - use CDN/official URLs as fallback
-  aave: 'https://cryptologos.cc/logos/aave-aave-logo.svg',
-  compound: 'https://cryptologos.cc/logos/compound-comp-logo.svg',
-  morpho: 'https://cdn.morpho.org/assets/logos/morpho.svg',
-  spark: 'https://app.spark.fi/spark-logo.svg',
-  euler: 'https://www.euler.finance/logo192.png',
-  curve: 'https://cryptologos.cc/logos/curve-dao-token-crv-logo.svg',
-  yearn: 'https://cryptologos.cc/logos/yearn-finance-yfi-logo.svg',
-  convex: 'https://www.convexfinance.com/static/icons/svg/convex.svg',
-  pendle: 'https://app.pendle.finance/favicon.png',
+  // DeFi protocols - use DefiLlama CDN for reliable logos
+  aave: 'https://icons.llama.fi/aave.jpg',
+  compound: 'https://icons.llama.fi/compound.jpg',
+  morpho: 'https://icons.llama.fi/morpho.jpg',
+  spark: 'https://icons.llama.fi/spark.jpg',
+  euler: 'https://icons.llama.fi/euler.jpg',
+  curve: 'https://icons.llama.fi/curve.jpg',
+  yearn: 'https://icons.llama.fi/yearn-finance.jpg',
+  convex: 'https://icons.llama.fi/convex-finance.jpg',
+  pendle: 'https://icons.llama.fi/pendle.jpg',
 };
 
-// Chain logos
+// Chain logos - use DefiLlama CDN for reliable logos
 export const CHAIN_LOGOS = {
-  ethereum: 'https://cryptologos.cc/logos/ethereum-eth-logo.svg',
-  arbitrum: 'https://cryptologos.cc/logos/arbitrum-arb-logo.svg',
-  optimism: 'https://cryptologos.cc/logos/optimism-ethereum-op-logo.svg',
-  polygon: 'https://cryptologos.cc/logos/polygon-matic-logo.svg',
-  base: 'https://raw.githubusercontent.com/base-org/brand-kit/main/logo/symbol/Base_Symbol_Blue.svg',
-  avalanche: 'https://cryptologos.cc/logos/avalanche-avax-logo.svg',
-  bnb: 'https://cryptologos.cc/logos/bnb-bnb-logo.svg',
+  ethereum: 'https://icons.llama.fi/chains/rsz_ethereum.jpg',
+  arbitrum: 'https://icons.llama.fi/chains/rsz_arbitrum.jpg',
+  optimism: 'https://icons.llama.fi/chains/rsz_optimism.jpg',
+  polygon: 'https://icons.llama.fi/chains/rsz_polygon.jpg',
+  base: 'https://icons.llama.fi/chains/rsz_base.jpg',
+  avalanche: 'https://icons.llama.fi/chains/rsz_avalanche.jpg',
+  bnb: 'https://icons.llama.fi/chains/rsz_bsc.jpg',
 };
 
 // Chain colors for badges

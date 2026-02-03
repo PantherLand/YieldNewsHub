@@ -20,61 +20,61 @@ export const PLATFORM_META = {
     homeUrl: 'https://www.bybit.com/en/earn/',
   },
 
-  // DeFi protocols - Lending
+  // DeFi protocols - Lending (using DefiLlama CDN for reliable logos)
   aave: {
     name: 'Aave',
     logoKey: 'aave',
-    logoUrl: 'https://cryptologos.cc/logos/aave-aave-logo.svg',
+    logoUrl: 'https://icons.llama.fi/aave.jpg',
     homeUrl: 'https://app.aave.com/',
   },
   compound: {
     name: 'Compound',
     logoKey: 'compound',
-    logoUrl: 'https://cryptologos.cc/logos/compound-comp-logo.svg',
+    logoUrl: 'https://icons.llama.fi/compound.jpg',
     homeUrl: 'https://app.compound.finance/',
   },
   morpho: {
     name: 'Morpho',
     logoKey: 'morpho',
-    logoUrl: 'https://cdn.morpho.org/assets/logos/morpho.svg',
+    logoUrl: 'https://icons.llama.fi/morpho.jpg',
     homeUrl: 'https://app.morpho.org/',
   },
   spark: {
     name: 'Spark',
     logoKey: 'spark',
-    logoUrl: 'https://app.spark.fi/spark-logo.svg',
+    logoUrl: 'https://icons.llama.fi/spark.jpg',
     homeUrl: 'https://app.spark.fi/',
   },
   euler: {
     name: 'Euler',
     logoKey: 'euler',
-    logoUrl: 'https://www.euler.finance/logo192.png',
+    logoUrl: 'https://icons.llama.fi/euler.jpg',
     homeUrl: 'https://app.euler.finance/',
   },
 
-  // DeFi protocols - DEX / Yield
+  // DeFi protocols - DEX / Yield (using DefiLlama CDN for reliable logos)
   curve: {
     name: 'Curve',
     logoKey: 'curve',
-    logoUrl: 'https://cryptologos.cc/logos/curve-dao-token-crv-logo.svg',
+    logoUrl: 'https://icons.llama.fi/curve.jpg',
     homeUrl: 'https://curve.fi/',
   },
   yearn: {
     name: 'Yearn',
     logoKey: 'yearn',
-    logoUrl: 'https://cryptologos.cc/logos/yearn-finance-yfi-logo.svg',
+    logoUrl: 'https://icons.llama.fi/yearn-finance.jpg',
     homeUrl: 'https://yearn.fi/',
   },
   convex: {
     name: 'Convex',
     logoKey: 'convex',
-    logoUrl: 'https://www.convexfinance.com/static/icons/svg/convex.svg',
+    logoUrl: 'https://icons.llama.fi/convex-finance.jpg',
     homeUrl: 'https://www.convexfinance.com/',
   },
   pendle: {
     name: 'Pendle',
     logoKey: 'pendle',
-    logoUrl: 'https://app.pendle.finance/favicon.png',
+    logoUrl: 'https://icons.llama.fi/pendle.jpg',
     homeUrl: 'https://app.pendle.finance/',
   },
 
@@ -86,48 +86,48 @@ export const PLATFORM_META = {
   },
 };
 
-// Chain metadata for displaying chain info and logos
+// Chain metadata for displaying chain info and logos (using DefiLlama CDN)
 export const CHAIN_META = {
   Ethereum: {
     name: 'Ethereum',
     logoKey: 'ethereum',
-    logoUrl: 'https://cryptologos.cc/logos/ethereum-eth-logo.svg',
+    logoUrl: 'https://icons.llama.fi/chains/rsz_ethereum.jpg',
     color: '#627EEA',
   },
   Arbitrum: {
     name: 'Arbitrum',
     logoKey: 'arbitrum',
-    logoUrl: 'https://cryptologos.cc/logos/arbitrum-arb-logo.svg',
+    logoUrl: 'https://icons.llama.fi/chains/rsz_arbitrum.jpg',
     color: '#28A0F0',
   },
   Optimism: {
     name: 'Optimism',
     logoKey: 'optimism',
-    logoUrl: 'https://cryptologos.cc/logos/optimism-ethereum-op-logo.svg',
+    logoUrl: 'https://icons.llama.fi/chains/rsz_optimism.jpg',
     color: '#FF0420',
   },
   Polygon: {
     name: 'Polygon',
     logoKey: 'polygon',
-    logoUrl: 'https://cryptologos.cc/logos/polygon-matic-logo.svg',
+    logoUrl: 'https://icons.llama.fi/chains/rsz_polygon.jpg',
     color: '#8247E5',
   },
   Base: {
     name: 'Base',
     logoKey: 'base',
-    logoUrl: 'https://raw.githubusercontent.com/base-org/brand-kit/main/logo/symbol/Base_Symbol_Blue.svg',
+    logoUrl: 'https://icons.llama.fi/chains/rsz_base.jpg',
     color: '#0052FF',
   },
   Avalanche: {
     name: 'Avalanche',
     logoKey: 'avalanche',
-    logoUrl: 'https://cryptologos.cc/logos/avalanche-avax-logo.svg',
+    logoUrl: 'https://icons.llama.fi/chains/rsz_avalanche.jpg',
     color: '#E84142',
   },
   BSC: {
     name: 'BNB Chain',
     logoKey: 'bnb',
-    logoUrl: 'https://cryptologos.cc/logos/bnb-bnb-logo.svg',
+    logoUrl: 'https://icons.llama.fi/chains/rsz_bsc.jpg',
     color: '#F0B90B',
   },
 };
