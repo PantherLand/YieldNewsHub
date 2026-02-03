@@ -7,8 +7,7 @@ export default defineConfig({
     port: 5173,
   },
   preview: {
-    // Railway serves the app on a public host; allow it for Vite preview.
-    // You can tighten this to specific domains later.
-    allowedHosts: 'all',
+    // Railway serves the app on a public host; allow this host for Vite preview.
+    allowedHosts: ['yieldnewshub-production.up.railway.app'],
   },
 });
