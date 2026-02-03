@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { LOGOS, CHAIN_LOGOS, CHAIN_COLORS } from './logos.js';
 import CexLinks from './CexLinks.jsx';
+import { WalletConnectButton } from '../wallet/WalletConnectButton.jsx';
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8787';
 
@@ -1302,6 +1303,8 @@ function App() {
               }}>@</span>
               {loading ? 'Syncing...' : 'Refresh'}
             </button>
+
+            <WalletConnectButton />
           </div>
         </div>
 
