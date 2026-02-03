@@ -915,9 +915,15 @@ function Settings({ apiBase }) {
         body: JSON.stringify({ enabled, botToken, chatId }),
       });
       const j = await r.json();
-      setMsg(j.ok ? '> Settings saved successfully' : `Error: ${JSON.stringify(j)}`);
+      // Support both old format (j.ok) and new format (j.success)
+      const isSuccess = j.success || j.ok;
+      if (isSuccess) {
+        setMsg('> Settings saved successfully');
+      } else {
+        setMsg(`[ ERROR ] ${j.error?.message || JSON.stringify(j.error || j)}`);
+      }
     } catch (e) {
-      setMsg(`Error: ${e.message}`);
+      setMsg(`[ ERROR ] ${e.message}`);
     }
     setLoading(false);
   }
@@ -928,9 +934,15 @@ function Settings({ apiBase }) {
     try {
       const r = await fetch(`${apiBase}/api/integrations/telegram/test`, { method: 'POST' });
       const j = await r.json();
-      setMsg(j.ok ? '> Test message sent!' : `Error: ${JSON.stringify(j)}`);
+      // Support both old format (j.ok) and new format (j.success)
+      const isSuccess = j.success || j.ok;
+      if (isSuccess) {
+        setMsg('> Test message sent!');
+      } else {
+        setMsg(`[ ERROR ] ${j.error?.message || JSON.stringify(j.error || j)}`);
+      }
     } catch (e) {
-      setMsg(`Error: ${e.message}`);
+      setMsg(`[ ERROR ] ${e.message}`);
     }
     setLoading(false);
   }
@@ -983,7 +995,7 @@ function Settings({ apiBase }) {
           Test Connection
         </button>
         {msg && (
-          <div style={settingsStyles.message(msg.includes('Error'))}>
+          <div style={settingsStyles.message(msg.includes('ERROR'))}>
             {msg}
           </div>
         )}
@@ -1110,13 +1122,15 @@ function App() {
   async function loadApy() {
     const r = await fetch(`${API_BASE}/api/apy?limit=50`);
     const j = await r.json();
-    setApy(j.items || []);
+    // Support both old format (j.items) and new format (j.data.items)
+    setApy(j.data?.items || j.items || []);
   }
 
   async function loadNews() {
     const r = await fetch(`${API_BASE}/api/news?limit=80&minScore=${minScore}`);
     const j = await r.json();
-    setNews(j.items || []);
+    // Support both old format (j.items) and new format (j.data.items)
+    setNews(j.data?.items || j.items || []);
   }
 
   async function refreshData() {
