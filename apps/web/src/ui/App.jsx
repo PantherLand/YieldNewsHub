@@ -390,7 +390,7 @@ function ApyTable({ data }) {
   return (
     <div style={styles.card}>
       <div style={tableStyles.header}>
-        <div>Provider</div>
+        <div>Platform</div>
         <div>Symbol</div>
         <div>APY</div>
         <div>TVL</div>
@@ -408,14 +408,28 @@ function ApyTable({ data }) {
             onMouseEnter={() => setHoveredRow(idx)}
             onMouseLeave={() => setHoveredRow(null)}
           >
-            <div>
-              <div style={tableStyles.provider}>{row.provider}</div>
-              <div style={tableStyles.chain}>{row.chain || '—'}</div>
+            <div style={{ display: 'flex', gap: theme.spacing.md, alignItems: 'center' }}>
+              {row.logoUrl ? (
+                <img src={row.logoUrl} alt={row.platformName || row.provider} width={22} height={22} style={{ borderRadius: theme.radius.md }} />
+              ) : (
+                <div style={{ width: 22, height: 22, borderRadius: theme.radius.md, background: theme.colors.border }} />
+              )}
+              <div>
+                <a
+                  href={row.platformUrl || row.url || '#'}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{ ...tableStyles.provider, textDecoration: 'none', color: theme.colors.textPrimary }}
+                >
+                  {row.platformName || row.provider}
+                </a>
+                <div style={tableStyles.chain}>{row.chain || '—'}</div>
+              </div>
             </div>
             <div style={tableStyles.symbol}>{row.symbol}</div>
-            <div style={tableStyles.apy}>{(row.apy ?? 0).toFixed(2)}%</div>
+            <div style={tableStyles.apy}>{row.apy == null ? '—' : `${Number(row.apy).toFixed(2)}%`}</div>
             <div style={tableStyles.tvl}>{fmtUsd(row.tvlUsd)}</div>
-            <div style={tableStyles.risk}>{row.riskNote || 'Standard DeFi risk'}</div>
+            <div style={tableStyles.risk}>{row.riskNote || 'Standard risk'}</div>
           </div>
         ))
       )}

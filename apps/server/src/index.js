@@ -32,13 +32,28 @@ app.get('/api/news', async (req, res) => {
   res.json({ items });
 });
 
+import { PLATFORM_META, normalizePlatformKey } from './platforms.js';
+
 app.get('/api/apy', async (req, res) => {
   const limit = Math.min(Number(req.query.limit || 50), 200);
   const items = await prisma.apyOpportunity.findMany({
     orderBy: [{ apy: 'desc' }, { tvlUsd: 'desc' }],
     take: limit,
   });
-  res.json({ items });
+
+  const out = items.map((it) => {
+    const key = normalizePlatformKey(it.provider) || (it.source === 'defillama' ? 'defillama' : null);
+    const meta = key ? PLATFORM_META[key] : null;
+    return {
+      ...it,
+      platformKey: key,
+      platformName: meta?.name || null,
+      logoUrl: meta?.logoUrl || null,
+      platformUrl: it.url || meta?.homeUrl || null,
+    };
+  });
+
+  res.json({ items: out });
 });
 
 app.get('/api/sources', async (_req, res) => {
