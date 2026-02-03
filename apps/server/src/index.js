@@ -7,6 +7,18 @@ import { DEFAULT_NEWS_SOURCES } from './sources.js';
 import { pollNewsOnce } from './jobs/news.js';
 import { pollApyOnce } from './jobs/apy.js';
 import { pushTelegram } from './telegram.js';
+import {
+  ErrorCode,
+  ApiError,
+  successResponse,
+  errorResponse,
+  parsePagination,
+  parseNumericRange,
+  parseStringFilter,
+  buildPaginationMeta,
+  errorHandler,
+  asyncHandler,
+} from './api-utils.js';
 
 const app = express();
 app.use(express.json({ limit: '1mb' }));
@@ -17,31 +29,156 @@ app.use(
   })
 );
 
-app.get('/healthz', (_req, res) => res.json({ ok: true }));
+app.get('/healthz', (_req, res) => res.json({ success: true, data: { ok: true } }));
 
 // --- APIs
-app.get('/api/news', async (req, res) => {
-  const limit = Math.min(Number(req.query.limit || 50), 200);
-  const minScore = Number(req.query.minScore || 0);
+
+/**
+ * GET /api/news
+ * Query params:
+ *   - limit (default: 50, max: 200)
+ *   - offset (default: 0)
+ *   - minScore (default: 0)
+ *   - source (filter by source name, comma-separated)
+ *   - tags (filter by tags, comma-separated)
+ *   - q (search in title)
+ */
+app.get('/api/news', asyncHandler(async (req, res) => {
+  const { limit, offset } = parsePagination(req.query);
+  const minScore = Math.max(0, Number(req.query.minScore) || 0);
+
+  // Build where clause
+  const where = {
+    score: { gte: minScore },
+  };
+
+  // Source filter
+  const sourceFilter = parseStringFilter(req.query.source);
+  if (sourceFilter) {
+    where.source = {
+      name: { in: sourceFilter },
+    };
+  }
+
+  // Tags filter (contains any of the specified tags)
+  const tagsFilter = parseStringFilter(req.query.tags);
+  if (tagsFilter) {
+    where.tags = { hasSome: tagsFilter };
+  }
+
+  // Title search
+  if (req.query.q && typeof req.query.q === 'string' && req.query.q.trim()) {
+    where.title = {
+      contains: req.query.q.trim(),
+      mode: 'insensitive',
+    };
+  }
+
+  // Get total count for pagination
+  const total = await prisma.newsItem.count({ where });
+
+  // Get items
   const items = await prisma.newsItem.findMany({
-    where: { score: { gte: minScore } },
+    where,
     orderBy: [{ publishedAt: 'desc' }, { createdAt: 'desc' }],
+    skip: offset,
     take: limit,
     include: { source: true },
   });
-  res.json({ items });
-});
+
+  res.json(successResponse(
+    { items },
+    buildPaginationMeta(total, limit, offset)
+  ));
+}));
 
 import { PLATFORM_META, normalizePlatformKey } from './platforms.js';
 
-app.get('/api/apy', async (req, res) => {
-  const limit = Math.min(Number(req.query.limit || 50), 200);
+/**
+ * GET /api/apy
+ * Query params:
+ *   - limit (default: 50, max: 200)
+ *   - offset (default: 0)
+ *   - chain (filter by chain, comma-separated, e.g. "Ethereum,Arbitrum")
+ *   - provider (filter by provider name, comma-separated)
+ *   - symbol (filter by symbol, comma-separated, e.g. "USDC,USDT")
+ *   - source (filter by source: "defillama", "cefi")
+ *   - minApy (minimum APY percentage)
+ *   - maxApy (maximum APY percentage)
+ *   - minTvl (minimum TVL in USD)
+ *   - sortBy (field to sort by: "apy", "tvl", "provider" - default: "apy")
+ *   - sortOrder (sort direction: "asc", "desc" - default: "desc")
+ */
+app.get('/api/apy', asyncHandler(async (req, res) => {
+  const { limit, offset } = parsePagination(req.query);
+
+  // Build where clause
+  const where = {};
+
+  // Chain filter
+  const chainFilter = parseStringFilter(req.query.chain);
+  if (chainFilter) {
+    // Handle "CeFi" as a special case (case-insensitive)
+    const normalizedChains = chainFilter.map(c =>
+      c.toLowerCase() === 'cefi' ? 'CeFi' : c
+    );
+    where.chain = { in: normalizedChains };
+  }
+
+  // Provider filter
+  const providerFilter = parseStringFilter(req.query.provider);
+  if (providerFilter) {
+    where.provider = { in: providerFilter };
+  }
+
+  // Symbol filter
+  const symbolFilter = parseStringFilter(req.query.symbol);
+  if (symbolFilter) {
+    where.symbol = { in: symbolFilter };
+  }
+
+  // Source filter (defillama or cefi)
+  const sourceFilter = parseStringFilter(req.query.source);
+  if (sourceFilter) {
+    where.source = { in: sourceFilter };
+  }
+
+  // APY range filter
+  const apyRange = parseNumericRange(req.query, 'apy');
+  if (apyRange) {
+    where.apy = apyRange;
+  }
+
+  // TVL range filter
+  const tvlRange = parseNumericRange(req.query, 'tvl');
+  if (tvlRange) {
+    where.tvlUsd = tvlRange;
+  }
+
+  // Sorting
+  const sortBy = req.query.sortBy || 'apy';
+  const sortOrder = req.query.sortOrder === 'asc' ? 'asc' : 'desc';
+
+  const orderByMap = {
+    apy: [{ apy: sortOrder }, { tvlUsd: 'desc' }],
+    tvl: [{ tvlUsd: sortOrder }, { apy: 'desc' }],
+    provider: [{ provider: sortOrder }, { apy: 'desc' }],
+  };
+  const orderBy = orderByMap[sortBy] || orderByMap.apy;
+
+  // Get total count for pagination
+  const total = await prisma.apyOpportunity.count({ where });
+
+  // Get items
   const items = await prisma.apyOpportunity.findMany({
-    orderBy: [{ apy: 'desc' }, { tvlUsd: 'desc' }],
+    where,
+    orderBy,
+    skip: offset,
     take: limit,
   });
 
-  const out = items.map((it) => {
+  // Enrich with platform metadata
+  const enrichedItems = items.map((it) => {
     const key = normalizePlatformKey(it.provider) || (it.source === 'defillama' ? 'defillama' : null);
     const meta = key ? PLATFORM_META[key] : null;
     return {
@@ -54,19 +191,50 @@ app.get('/api/apy', async (req, res) => {
     };
   });
 
-  res.json({ items: out });
-});
+  res.json(successResponse(
+    { items: enrichedItems },
+    buildPaginationMeta(total, limit, offset)
+  ));
+}));
 
-app.get('/api/sources', async (_req, res) => {
+/**
+ * GET /api/sources
+ * Returns all news and APY data sources
+ */
+app.get('/api/sources', asyncHandler(async (_req, res) => {
   const news = await prisma.newsSource.findMany({ orderBy: { name: 'asc' } });
   const apy = await prisma.apySource.findMany({ orderBy: { name: 'asc' } });
-  res.json({ news, apy });
-});
+  res.json(successResponse({ news, apy }));
+}));
 
-app.post('/api/integrations/telegram', async (req, res) => {
+/**
+ * POST /api/integrations/telegram
+ * Configure Telegram integration
+ */
+app.post('/api/integrations/telegram', asyncHandler(async (req, res) => {
   const { enabled, botToken, chatId } = req.body || {};
-  if (typeof enabled !== 'boolean' || typeof botToken !== 'string' || typeof chatId !== 'string') {
-    return res.status(400).json({ ok: false, error: 'invalid_body' });
+
+  // Validation
+  if (typeof enabled !== 'boolean') {
+    throw new ApiError(
+      ErrorCode.INVALID_PARAMETER,
+      'enabled must be a boolean',
+      'enabled'
+    );
+  }
+  if (typeof botToken !== 'string' || !botToken.trim()) {
+    throw new ApiError(
+      ErrorCode.INVALID_PARAMETER,
+      'botToken must be a non-empty string',
+      'botToken'
+    );
+  }
+  if (typeof chatId !== 'string' || !chatId.trim()) {
+    throw new ApiError(
+      ErrorCode.INVALID_PARAMETER,
+      'chatId must be a non-empty string',
+      'chatId'
+    );
   }
 
   const existing = await prisma.telegramIntegration.findFirst();
@@ -75,18 +243,35 @@ app.post('/api/integrations/telegram', async (req, res) => {
     update: { enabled, botToken, chatId },
     create: { enabled, botToken, chatId },
   }).catch(async () => {
-    // If upsert fails due to missing where id, do a create
     if (existing) return existing;
     return prisma.telegramIntegration.create({ data: { enabled, botToken, chatId } });
   });
 
-  res.json({ ok: true, integration: { id: row.id, enabled: row.enabled, chatId: row.chatId } });
-});
+  res.json(successResponse({
+    integration: { id: row.id, enabled: row.enabled, chatId: row.chatId }
+  }));
+}));
 
-app.post('/api/integrations/telegram/test', async (_req, res) => {
+/**
+ * POST /api/integrations/telegram/test
+ * Send a test message via Telegram
+ */
+app.post('/api/integrations/telegram/test', asyncHandler(async (_req, res) => {
   const r = await pushTelegram('YieldNewsHub test message');
-  res.json(r);
-});
+  if (r.ok) {
+    res.json(successResponse({ message: 'Test message sent successfully' }));
+  } else {
+    throw new ApiError(
+      ErrorCode.INTERNAL_ERROR,
+      r.reason || 'Failed to send test message',
+      null,
+      500
+    );
+  }
+}));
+
+// Global error handler (must be last middleware)
+app.use(errorHandler);
 
 // --- bootstrap
 async function ensureSeedData() {
