@@ -1,0 +1,13 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_DB: yieldnewshub
+    ports:
+      - "5432:5432"
+    volumes:
+      - ynh_pg:/var/lib/postgresql/data
+volumes:
+  ynh_pg:

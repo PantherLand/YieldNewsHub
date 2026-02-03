@@ -1,0 +1,83 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum SourceKind {
+  RSS
+  API
+}
+
+enum AssetKind {
+  STABLECOIN
+}
+
+model NewsSource {
+  id        String    @id @default(cuid())
+  name      String
+  kind      SourceKind
+  url       String
+  enabled   Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  items     NewsItem[]
+}
+
+model NewsItem {
+  id          String   @id @default(cuid())
+  sourceId    String
+  source      NewsSource @relation(fields: [sourceId], references: [id])
+
+  title       String
+  url         String   @unique
+  publishedAt DateTime?
+  summary     String?
+
+  tags        String[] @default([])
+  score       Int      @default(0)
+
+  createdAt   DateTime @default(now())
+}
+
+model ApySource {
+  id        String   @id @default(cuid())
+  name      String
+  url       String
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ApyOpportunity {
+  id          String   @id @default(cuid())
+
+  provider    String
+  chain       String?
+  symbol      String
+  assetKind   AssetKind @default(STABLECOIN)
+
+  apy         Float
+  tvlUsd      Float?
+
+  url         String?
+  riskNote    String?
+
+  source      String?
+  externalId  String?  @unique
+
+  updatedAt   DateTime @default(now())
+  createdAt   DateTime @default(now())
+}
+
+model TelegramIntegration {
+  id        String   @id @default(cuid())
+  enabled   Boolean  @default(false)
+  botToken  String
+  chatId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
