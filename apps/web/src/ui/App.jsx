@@ -1,9 +1,212 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { LOGOS, CHAIN_LOGOS, CHAIN_COLORS } from './logos.js';
 import CexLinks from './CexLinks.jsx';
 import { WalletConnectButton } from '../wallet/WalletConnectButton.jsx';
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8787';
+
+// ============================================
+// INTERNATIONALIZATION (i18n) - English & Chinese
+// ============================================
+
+const translations = {
+  en: {
+    // Header
+    appName: 'YieldNewsHub',
+    subtitle: 'Low-risk stablecoin yields & market intelligence',
+
+    // Navigation tabs
+    tabYields: 'Yields',
+    tabCexLinks: 'CEX Links',
+    tabNews: 'News',
+    tabConfig: 'Config',
+
+    // Buttons
+    refresh: 'Refresh',
+    syncing: 'Syncing...',
+    deposit: 'Deposit',
+
+    // APY Table
+    protocol: 'Protocol',
+    chain: 'Chain',
+    asset: 'Asset',
+    apy: 'APY',
+    tvl: 'TVL',
+    action: 'Action',
+    noYieldData: 'No yield opportunities found',
+
+    // Filters
+    filterType: 'Type:',
+    filterChain: 'Chain:',
+    filterMinTvl: 'Min TVL:',
+    filterMinApy: 'Min APY:',
+    allChains: 'All Chains',
+    pools: 'pools',
+
+    // News List
+    minScore: 'Min Score:',
+    scoreHint: '1 = all | 10 = critical only',
+    noNews: 'No news matching criteria',
+    unknown: 'Unknown',
+
+    // Stats Bar
+    yieldOpportunities: 'Yield Opportunities',
+    newsArticles: 'News Articles',
+    dataFeed: 'Data Feed',
+    live: 'LIVE',
+
+    // Settings
+    telegramIntegration: 'Telegram Integration',
+    enableTelegram: 'Enable Telegram notifications for high-priority news',
+    botToken: 'Bot Token',
+    chatId: 'Chat ID',
+    saveConfig: 'Save Config',
+    processing: 'Processing...',
+    testConnection: 'Test Connection',
+    settingsSaved: '> Settings saved successfully',
+    testMessageSent: '> Test message sent!',
+    settingsNote: 'MVP mode: Credentials stored in database. Implement proper secret management for production.',
+
+    // Footer
+    connected: 'Connected:',
+    builtForDefi: '// Built for DeFi',
+
+    // Language
+    language: 'EN',
+  },
+  zh: {
+    // Header
+    appName: 'YieldNewsHub',
+    subtitle: '低风险稳定币收益与市场情报',
+
+    // Navigation tabs
+    tabYields: '收益',
+    tabCexLinks: 'CEX 链接',
+    tabNews: '新闻',
+    tabConfig: '设置',
+
+    // Buttons
+    refresh: '刷新',
+    syncing: '同步中...',
+    deposit: '存入',
+
+    // APY Table
+    protocol: '协议',
+    chain: '链',
+    asset: '资产',
+    apy: '年化收益',
+    tvl: '锁仓量',
+    action: '操作',
+    noYieldData: '暂无收益机会',
+
+    // Filters
+    filterType: '类型:',
+    filterChain: '链:',
+    filterMinTvl: '最低锁仓:',
+    filterMinApy: '最低年化:',
+    allChains: '所有链',
+    pools: '池子',
+
+    // News List
+    minScore: '最低评分:',
+    scoreHint: '1 = 全部 | 10 = 仅重要',
+    noNews: '没有符合条件的新闻',
+    unknown: '未知',
+
+    // Stats Bar
+    yieldOpportunities: '收益机会',
+    newsArticles: '新闻文章',
+    dataFeed: '数据流',
+    live: '实时',
+
+    // Settings
+    telegramIntegration: 'Telegram 集成',
+    enableTelegram: '为高优先级新闻启用 Telegram 通知',
+    botToken: '机器人令牌',
+    chatId: '聊天 ID',
+    saveConfig: '保存设置',
+    processing: '处理中...',
+    testConnection: '测试连接',
+    settingsSaved: '> 设置保存成功',
+    testMessageSent: '> 测试消息已发送！',
+    settingsNote: 'MVP 模式：凭据存储在数据库中。生产环境请实施适当的密钥管理。',
+
+    // Footer
+    connected: '已连接:',
+    builtForDefi: '// 为 DeFi 构建',
+
+    // Language
+    language: '中',
+  },
+};
+
+// Language Context
+const LanguageContext = createContext();
+
+function LanguageProvider({ children }) {
+  const [language, setLanguage] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('ynh-language') || 'en';
+    }
+    return 'en';
+  });
+
+  const toggleLanguage = () => {
+    const newLang = language === 'en' ? 'zh' : 'en';
+    setLanguage(newLang);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('ynh-language', newLang);
+    }
+  };
+
+  const t = (key) => {
+    return translations[language][key] || key;
+  };
+
+  return (
+    <LanguageContext.Provider value={{ language, toggleLanguage, t }}>
+      {children}
+    </LanguageContext.Provider>
+  );
+}
+
+function useLanguage() {
+  const context = useContext(LanguageContext);
+  if (!context) {
+    throw new Error('useLanguage must be used within a LanguageProvider');
+  }
+  return context;
+}
+
+// Language Toggle Button
+function LanguageToggle() {
+  const { language, toggleLanguage, t } = useLanguage();
+
+  return (
+    <button
+      onClick={toggleLanguage}
+      style={{
+        padding: '10px 16px',
+        borderRadius: '12px',
+        border: '1px solid rgba(168, 85, 247, 0.3)',
+        background: 'rgba(168, 85, 247, 0.1)',
+        color: '#C084FC',
+        cursor: 'pointer',
+        fontSize: '13px',
+        fontWeight: 700,
+        transition: 'all 0.15s ease-out',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '6px',
+        backdropFilter: 'blur(12px)',
+      }}
+      title={language === 'en' ? '切换到中文' : 'Switch to English'}
+    >
+      <span style={{ fontSize: '16px' }}>🌐</span>
+      {t('language')}
+    </button>
+  );
+}
 
 // ============================================
 // YIELDNEWSHUB CYBERPUNK DESIGN SYSTEM
@@ -425,6 +628,7 @@ function fmtUsd(x) {
 // APY Table Component with Cyberpunk styling
 function ApyTable({ data }) {
   const [hoveredRow, setHoveredRow] = useState(null);
+  const { t } = useLanguage();
 
   const tableStyles = {
     header: {
@@ -495,12 +699,12 @@ function ApyTable({ data }) {
   return (
     <div style={styles.card}>
       <div style={tableStyles.header}>
-        <div>Protocol</div>
-        <div>Chain</div>
-        <div>Asset</div>
-        <div>APY</div>
-        <div>TVL</div>
-        <div>Action</div>
+        <div>{t('protocol')}</div>
+        <div>{t('chain')}</div>
+        <div>{t('asset')}</div>
+        <div>{t('apy')}</div>
+        <div>{t('tvl')}</div>
+        <div>{t('action')}</div>
       </div>
       {data.length === 0 ? (
         <div style={{
@@ -510,7 +714,7 @@ function ApyTable({ data }) {
           background: theme.colors.gradientCard,
         }}>
           <div style={{ fontSize: '24px', marginBottom: theme.spacing.sm }}>...</div>
-          No yield opportunities found
+          {t('noYieldData')}
         </div>
       ) : (
         data.map((row, idx) => {
@@ -623,7 +827,7 @@ function ApyTable({ data }) {
                     boxShadow: hoveredRow === idx ? theme.colors.glowPurple : 'none',
                   }}
                 >
-                  Deposit
+                  {t('deposit')}
                   <span style={{ fontSize: '10px' }}>&rarr;</span>
                 </a>
               </div>
@@ -638,6 +842,7 @@ function ApyTable({ data }) {
 // News Card Component with Cyberpunk styling
 function NewsCard({ item }) {
   const [isHovered, setIsHovered] = useState(false);
+  const { t } = useLanguage();
 
   const getScoreColor = (score) => {
     if (score >= 8) return { bg: 'rgba(0, 255, 136, 0.1)', color: theme.colors.neonGreen, border: 'rgba(0, 255, 136, 0.3)' };
@@ -743,15 +948,15 @@ function NewsCard({ item }) {
         </div>
       </div>
       <div style={cardStyles.meta}>
-        <span style={cardStyles.source}>{item.source?.name || 'Unknown'}</span>
+        <span style={cardStyles.source}>{item.source?.name || t('unknown')}</span>
         <span style={{ color: theme.colors.cyberPurple }}>|</span>
         <span>{item.publishedAt ? new Date(item.publishedAt).toLocaleString() : '...'}</span>
       </div>
       {item.summary && <div style={cardStyles.summary}>{item.summary}</div>}
       {item.tags?.length > 0 && (
         <div style={cardStyles.tags}>
-          {item.tags.map(t => (
-            <span key={t} style={cardStyles.tag}>{t}</span>
+          {item.tags.map(tag => (
+            <span key={tag} style={cardStyles.tag}>{tag}</span>
           ))}
         </div>
       )}
@@ -761,6 +966,7 @@ function NewsCard({ item }) {
 
 // News List Component
 function NewsList({ data, minScore, setMinScore }) {
+  const { t } = useLanguage();
   const filterStyles = {
     container: {
       display: 'flex',
@@ -804,7 +1010,7 @@ function NewsList({ data, minScore, setMinScore }) {
   return (
     <div>
       <div style={filterStyles.container}>
-        <span style={filterStyles.label}>Min Score:</span>
+        <span style={filterStyles.label}>{t('minScore')}</span>
         <input
           type="number"
           value={minScore}
@@ -813,7 +1019,7 @@ function NewsList({ data, minScore, setMinScore }) {
           min={1}
           max={10}
         />
-        <span style={filterStyles.hint}>1 = all | 10 = critical only</span>
+        <span style={filterStyles.hint}>{t('scoreHint')}</span>
       </div>
       <div style={filterStyles.grid}>
         {data.length === 0 ? (
@@ -826,7 +1032,7 @@ function NewsList({ data, minScore, setMinScore }) {
             border: `1px solid ${theme.colors.border}`,
           }}>
             <div style={{ fontSize: '24px', marginBottom: theme.spacing.sm }}>...</div>
-            No news matching criteria
+            {t('noNews')}
           </div>
         ) : (
           data.map(item => <NewsCard key={item.id} item={item} />)
@@ -843,6 +1049,7 @@ function Settings({ apiBase }) {
   const [enabled, setEnabled] = useState(false);
   const [msg, setMsg] = useState('');
   const [loading, setLoading] = useState(false);
+  const { t } = useLanguage();
 
   const settingsStyles = {
     container: {
@@ -978,7 +1185,7 @@ function Settings({ apiBase }) {
       // Support both old format (j.ok) and new format (j.success)
       const isSuccess = j.success || j.ok;
       if (isSuccess) {
-        setMsg('> Settings saved successfully');
+        setMsg(t('settingsSaved'));
       } else {
         setMsg(`[ ERROR ] ${j.error?.message || JSON.stringify(j.error || j)}`);
       }
@@ -997,7 +1204,7 @@ function Settings({ apiBase }) {
       // Support both old format (j.ok) and new format (j.success)
       const isSuccess = j.success || j.ok;
       if (isSuccess) {
-        setMsg('> Test message sent!');
+        setMsg(t('testMessageSent'));
       } else {
         setMsg(`[ ERROR ] ${j.error?.message || JSON.stringify(j.error || j)}`);
       }
@@ -1011,7 +1218,7 @@ function Settings({ apiBase }) {
     <div style={settingsStyles.container}>
       <div style={settingsStyles.title}>
         <div style={settingsStyles.icon}>T</div>
-        <span>Telegram Integration</span>
+        <span>{t('telegramIntegration')}</span>
       </div>
 
       <div style={settingsStyles.section}>
@@ -1022,13 +1229,13 @@ function Settings({ apiBase }) {
             onChange={(e) => setEnabled(e.target.checked)}
             style={settingsStyles.checkbox}
           />
-          Enable Telegram notifications for high-priority news
+          {t('enableTelegram')}
         </label>
       </div>
 
       <div style={settingsStyles.grid}>
         <div style={settingsStyles.inputGroup}>
-          <div style={settingsStyles.inputLabel}>Bot Token</div>
+          <div style={settingsStyles.inputLabel}>{t('botToken')}</div>
           <input
             value={botToken}
             onChange={(e) => setBotToken(e.target.value)}
@@ -1037,7 +1244,7 @@ function Settings({ apiBase }) {
           />
         </div>
         <div style={settingsStyles.inputGroup}>
-          <div style={settingsStyles.inputLabel}>Chat ID</div>
+          <div style={settingsStyles.inputLabel}>{t('chatId')}</div>
           <input
             value={chatId}
             onChange={(e) => setChatId(e.target.value)}
@@ -1049,10 +1256,10 @@ function Settings({ apiBase }) {
 
       <div style={settingsStyles.actions}>
         <button onClick={save} disabled={loading} style={settingsStyles.primaryButton}>
-          {loading ? 'Processing...' : 'Save Config'}
+          {loading ? t('processing') : t('saveConfig')}
         </button>
         <button onClick={test} disabled={loading} style={settingsStyles.secondaryButton}>
-          Test Connection
+          {t('testConnection')}
         </button>
         {msg && (
           <div style={settingsStyles.message(msg.includes('ERROR'))}>
@@ -1062,7 +1269,7 @@ function Settings({ apiBase }) {
       </div>
 
       <div style={settingsStyles.note}>
-        <strong>[ ! ]</strong> MVP mode: Credentials stored in database. Implement proper secret management for production.
+        <strong>[ ! ]</strong> {t('settingsNote')}
       </div>
     </div>
   );
@@ -1070,6 +1277,7 @@ function Settings({ apiBase }) {
 
 // Stats Bar Component with Cyberpunk styling
 function StatsBar({ apyCount, newsCount }) {
+  const { t } = useLanguage();
   const statsStyles = {
     container: {
       display: 'grid',
@@ -1121,7 +1329,7 @@ function StatsBar({ apyCount, newsCount }) {
 
   const stats = [
     {
-      label: 'Yield Opportunities',
+      label: t('yieldOpportunities'),
       value: apyCount,
       icon: '$',
       accent: theme.colors.neonGreen,
@@ -1129,7 +1337,7 @@ function StatsBar({ apyCount, newsCount }) {
       glow: theme.colors.glowGreen,
     },
     {
-      label: 'News Articles',
+      label: t('newsArticles'),
       value: newsCount,
       icon: '#',
       accent: theme.colors.cyberPurple,
@@ -1137,8 +1345,8 @@ function StatsBar({ apyCount, newsCount }) {
       glow: theme.colors.glowPurple,
     },
     {
-      label: 'Data Feed',
-      value: 'LIVE',
+      label: t('dataFeed'),
+      value: t('live'),
       icon: '>',
       accent: theme.colors.electricCyan,
       gradient: 'linear-gradient(135deg, rgba(6, 182, 212, 0.2) 0%, rgba(34, 211, 238, 0.1) 100%)',
@@ -1164,7 +1372,7 @@ function StatsBar({ apyCount, newsCount }) {
 }
 
 // Main App Component
-function App() {
+function AppContent() {
   const [tab, setTab] = useState('apy');
   const [apy, setApy] = useState([]);
   const [news, setNews] = useState([]);
@@ -1180,6 +1388,8 @@ function App() {
   // Chain filter
   const [selectedChain, setSelectedChain] = useState('all');
 
+  const { t } = useLanguage();
+
   // Get available chains from data
   const availableChains = useMemo(() => {
     const chains = new Set();
@@ -1192,11 +1402,11 @@ function App() {
   }, [apy]);
 
   const tabs = useMemo(() => [
-    { id: 'apy', name: 'Yields', icon: '$' },
-    { id: 'cex', name: 'CEX Links', icon: 'C' },
-    { id: 'news', name: 'News', icon: '#' },
-    { id: 'settings', name: 'Config', icon: '>' },
-  ], []);
+    { id: 'apy', name: t('tabYields'), icon: '$' },
+    { id: 'cex', name: t('tabCexLinks'), icon: 'C' },
+    { id: 'news', name: t('tabNews'), icon: '#' },
+    { id: 'settings', name: t('tabConfig'), icon: '>' },
+  ], [t]);
 
   async function loadApy() {
     const r = await fetch(`${API_BASE}/api/apy?limit=50`);
@@ -1282,25 +1492,26 @@ function App() {
               <LogoIcon size={52} />
             </div>
             <div>
-              <h1 style={styles.title}>YieldNewsHub</h1>
-              <div style={styles.subtitle}>// Low-risk stablecoin yields & market intelligence</div>
+              <h1 style={styles.title}>{t('appName')}</h1>
+              <div style={styles.subtitle}>// {t('subtitle')}</div>
             </div>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: theme.spacing.md }}>
+            <LanguageToggle />
             <div style={styles.nav}>
-              {tabs.map(t => (
+              {tabs.map(tabItem => (
                 <button
-                  key={t.id}
-                  onClick={() => setTab(t.id)}
-                  style={styles.navButton(tab === t.id)}
+                  key={tabItem.id}
+                  onClick={() => setTab(tabItem.id)}
+                  style={styles.navButton(tab === tabItem.id)}
                 >
                   <span style={{
                     marginRight: '6px',
                     opacity: 0.7,
                     fontFamily: theme.fonts.mono,
-                  }}>{t.icon}</span>
-                  {t.name}
+                  }}>{tabItem.icon}</span>
+                  {tabItem.name}
                 </button>
               ))}
             </div>
@@ -1319,7 +1530,7 @@ function App() {
                 animation: loading ? 'spin 1s linear infinite' : 'none',
                 fontFamily: theme.fonts.mono,
               }}>@</span>
-              {loading ? 'Syncing...' : 'Refresh'}
+              {loading ? t('syncing') : t('refresh')}
             </button>
 
             <WalletConnectButton />
@@ -1356,7 +1567,7 @@ function App() {
                   fontWeight: 600,
                   textTransform: 'uppercase',
                   letterSpacing: '1px',
-                }}>Type:</span>
+                }}>{t('filterType')}</span>
                 {[
                   { id: 'all', label: 'ALL' },
                   { id: 'dex', label: 'DEX' },
@@ -1381,7 +1592,7 @@ function App() {
                     fontWeight: 600,
                     textTransform: 'uppercase',
                     letterSpacing: '1px',
-                  }}>Chain:</span>
+                  }}>{t('filterChain')}</span>
                   <select
                     value={selectedChain}
                     onChange={(e) => setSelectedChain(e.target.value)}
@@ -1398,7 +1609,7 @@ function App() {
                       minWidth: '120px',
                     }}
                   >
-                    <option value="all">All Chains</option>
+                    <option value="all">{t('allChains')}</option>
                     {availableChains.map((chain) => (
                       <option key={chain} value={chain} style={{
                         color: CHAIN_COLORS[chain] || theme.colors.textPrimary,
@@ -1418,7 +1629,7 @@ function App() {
                   fontWeight: 600,
                   textTransform: 'uppercase',
                   letterSpacing: '1px',
-                }}>Min TVL:</span>
+                }}>{t('filterMinTvl')}</span>
                 <input
                   type="number"
                   value={minTvl}
@@ -1453,7 +1664,7 @@ function App() {
                   fontWeight: 600,
                   textTransform: 'uppercase',
                   letterSpacing: '1px',
-                }}>Min APY:</span>
+                }}>{t('filterMinApy')}</span>
                 <input
                   type="number"
                   value={minApy}
@@ -1486,7 +1697,7 @@ function App() {
                 color: theme.colors.textMuted,
                 fontSize: '12px',
               }}>
-                <span style={{ color: theme.colors.electricCyanLight, fontWeight: 600 }}>{filteredApy.length}</span> pools
+                <span style={{ color: theme.colors.electricCyanLight, fontWeight: 600 }}>{filteredApy.length}</span> {t('pools')}
               </div>
             </div>
             <ApyTable data={filteredApy} />
@@ -1504,7 +1715,7 @@ function App() {
               textShadow: `0 0 10px ${theme.colors.neonGreen}`,
               fontFamily: theme.fonts.mono,
             }}>*</span>
-            <span>Connected:</span>
+            <span>{t('connected')}</span>
             <code style={{
               fontFamily: theme.fonts.mono,
               background: theme.colors.bgCard,
@@ -1516,7 +1727,7 @@ function App() {
             }}>{API_BASE}</code>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: theme.spacing.md }}>
-            <span style={{ fontFamily: theme.fonts.mono }}>// Built for DeFi</span>
+            <span style={{ fontFamily: theme.fonts.mono }}>{t('builtForDefi')}</span>
             <span style={styles.badge('pink')}>v1.0</span>
           </div>
         </div>
@@ -1595,6 +1806,15 @@ function App() {
         }
       `}</style>
     </div>
+  );
+}
+
+// App wrapper with LanguageProvider
+function App() {
+  return (
+    <LanguageProvider>
+      <AppContent />
+    </LanguageProvider>
   );
 }
 
