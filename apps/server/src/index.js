@@ -92,7 +92,7 @@ app.get('/api/news', asyncHandler(async (req, res) => {
   ));
 }));
 
-import { PLATFORM_META, normalizePlatformKey } from './platforms.js';
+import { PLATFORM_META, CHAIN_META, normalizePlatformKey, getChainMeta } from './platforms.js';
 import { getCexLinks } from './cexLinks.js';
 
 /**
@@ -178,10 +178,11 @@ app.get('/api/apy', asyncHandler(async (req, res) => {
     take: limit,
   });
 
-  // Enrich with platform metadata
+  // Enrich with platform and chain metadata
   const enrichedItems = items.map((it) => {
     const key = normalizePlatformKey(it.provider) || (it.source === 'defillama' ? 'defillama' : null);
     const meta = key ? PLATFORM_META[key] : null;
+    const chainMeta = getChainMeta(it.chain);
     return {
       ...it,
       platformKey: key,
@@ -189,6 +190,11 @@ app.get('/api/apy', asyncHandler(async (req, res) => {
       logoKey: meta?.logoKey || null,
       logoUrl: meta?.logoUrl || null,
       platformUrl: it.url || meta?.homeUrl || null,
+      // Chain metadata
+      chainName: chainMeta?.name || it.chain || null,
+      chainLogoKey: chainMeta?.logoKey || null,
+      chainLogoUrl: chainMeta?.logoUrl || null,
+      chainColor: chainMeta?.color || null,
     };
   });
 

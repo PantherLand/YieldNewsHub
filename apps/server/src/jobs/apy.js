@@ -77,18 +77,23 @@ function riskNoteFromPool(p) {
   return `${base}${project ? ` • ${project}` : ''}${chain ? ` • ${chain}` : ''}`;
 }
 
+// 权威 DeFi 项目白名单 - 仅保留经过审计、TVL 稳定的头部协议
 const DEFILLAMA_PROJECT_ALLOWLIST = new Set([
+  // Lending protocols
   'aave-v3',
-  'aave-v2',
-  'morpho-v1',
-  'morpho',
   'compound-v3',
-  'compound-v2',
-  'euler-v2',
+  'morpho',
   'spark',
+  'euler-v2',
+  // DEX / Yield
   'curve-dex',
   'yearn-finance',
+  'convex-finance',
+  'pendle',
 ]);
+
+// 最低 APY 阈值 (3%)
+const MIN_APY_THRESHOLD = 3;
 
 function isAllowedProject(project = '') {
   const p = String(project || '').toLowerCase();
@@ -106,14 +111,15 @@ export async function pollApyOnce() {
     const json = await res.json();
     const pools = json?.data || [];
 
-    // pick stable-only pools, sort by apy, require tvl threshold
+    // pick stable-only pools with: whitelisted project, TVL >= $1M, APY >= 3%
+    // sort by apy desc, limit to top 20
     const filtered = pools
       .filter((p) => isAllowedProject(p.project))
       .filter((p) => isStableOnlyPool(p))
-      .filter((p) => typeof p.apy === 'number' && p.apy >= 0)
+      .filter((p) => typeof p.apy === 'number' && p.apy >= MIN_APY_THRESHOLD)
       .filter((p) => (p.tvlUsd ?? 0) >= 1_000_000)
       .sort((a, b) => (b.apy ?? 0) - (a.apy ?? 0))
-      .slice(0, 80);
+      .slice(0, 20);
 
     for (const p of filtered) {
       const externalId = p.pool;

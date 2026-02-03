@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { LOGOS } from './logos.js';
+import { LOGOS, CHAIN_LOGOS, CHAIN_COLORS } from './logos.js';
 import CexLinks from './CexLinks.jsx';
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8787';
@@ -428,7 +428,7 @@ function ApyTable({ data }) {
   const tableStyles = {
     header: {
       display: 'grid',
-      gridTemplateColumns: '1.5fr 0.8fr 0.8fr 0.8fr 1.2fr',
+      gridTemplateColumns: '1.8fr 0.8fr 0.6fr 0.8fr 0.8fr 1fr',
       padding: '16px 24px',
       background: 'linear-gradient(90deg, rgba(168, 85, 247, 0.1) 0%, rgba(6, 182, 212, 0.05) 100%)',
       borderBottom: `1px solid ${theme.colors.border}`,
@@ -440,7 +440,7 @@ function ApyTable({ data }) {
     },
     row: (isHovered) => ({
       display: 'grid',
-      gridTemplateColumns: '1.5fr 0.8fr 0.8fr 0.8fr 1.2fr',
+      gridTemplateColumns: '1.8fr 0.8fr 0.6fr 0.8fr 0.8fr 1fr',
       padding: '18px 24px',
       borderBottom: `1px solid ${theme.colors.border}`,
       background: isHovered
@@ -455,12 +455,19 @@ function ApyTable({ data }) {
       color: theme.colors.textPrimary,
       fontSize: '14px',
     },
-    chain: {
-      fontSize: '11px',
-      color: theme.colors.textMuted,
+    chainBadge: (color) => ({
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '4px',
+      fontSize: '10px',
+      padding: '3px 8px',
+      borderRadius: theme.radius.full,
+      background: `${color || theme.colors.cyberPurple}15`,
+      color: color || theme.colors.textMuted,
+      fontWeight: 600,
+      border: `1px solid ${color || theme.colors.cyberPurple}30`,
       marginTop: '4px',
-      fontFamily: theme.fonts.mono,
-    },
+    }),
     symbol: {
       fontFamily: theme.fonts.mono,
       color: theme.colors.electricCyanLight,
@@ -479,20 +486,20 @@ function ApyTable({ data }) {
       color: theme.colors.textSecondary,
       fontSize: '13px',
     },
-    risk: {
+    action: {
       fontSize: '12px',
-      color: theme.colors.textMuted,
     },
   };
 
   return (
     <div style={styles.card}>
       <div style={tableStyles.header}>
-        <div>Platform</div>
+        <div>Protocol</div>
+        <div>Chain</div>
         <div>Asset</div>
         <div>APY</div>
         <div>TVL</div>
-        <div>Risk Level</div>
+        <div>Action</div>
       </div>
       {data.length === 0 ? (
         <div style={{
@@ -505,72 +512,123 @@ function ApyTable({ data }) {
           No yield opportunities found
         </div>
       ) : (
-        data.map((row, idx) => (
-          <div
-            key={row.id}
-            style={tableStyles.row(hoveredRow === idx)}
-            onMouseEnter={() => setHoveredRow(idx)}
-            onMouseLeave={() => setHoveredRow(null)}
-          >
-            <div style={{ display: 'flex', gap: theme.spacing.md, alignItems: 'center' }}>
-              {row.logoKey && LOGOS[row.logoKey] ? (
-                <img
-                  src={LOGOS[row.logoKey]}
-                  alt={row.platformName || row.provider}
-                  width={28}
-                  height={28}
-                  style={{
+        data.map((row, idx) => {
+          const chainColor = CHAIN_COLORS[row.chain] || null;
+          const logoSrc = (row.logoKey && LOGOS[row.logoKey]) || row.logoUrl;
+          const chainLogoSrc = row.chainLogoUrl || (row.chainLogoKey && CHAIN_LOGOS[row.chainLogoKey?.toLowerCase()]);
+
+          return (
+            <div
+              key={row.id}
+              style={tableStyles.row(hoveredRow === idx)}
+              onMouseEnter={() => setHoveredRow(idx)}
+              onMouseLeave={() => setHoveredRow(null)}
+            >
+              {/* Protocol */}
+              <div style={{ display: 'flex', gap: theme.spacing.md, alignItems: 'center' }}>
+                {logoSrc ? (
+                  <img
+                    src={logoSrc}
+                    alt={row.platformName || row.provider}
+                    width={32}
+                    height={32}
+                    style={{
+                      borderRadius: theme.radius.sm,
+                      border: `1px solid ${theme.colors.border}`,
+                      background: theme.colors.bgInput,
+                    }}
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                    }}
+                  />
+                ) : (
+                  <div style={{
+                    width: 32,
+                    height: 32,
                     borderRadius: theme.radius.sm,
-                    border: `1px solid ${theme.colors.border}`,
-                  }}
-                />
-              ) : row.logoUrl ? (
-                <img
-                  src={row.logoUrl}
-                  alt={row.platformName || row.provider}
-                  width={28}
-                  height={28}
-                  style={{
-                    borderRadius: theme.radius.sm,
-                    border: `1px solid ${theme.colors.border}`,
-                  }}
-                />
-              ) : (
-                <div style={{
-                  width: 28,
-                  height: 28,
-                  borderRadius: theme.radius.sm,
-                  background: theme.colors.gradientPrimary,
-                  opacity: 0.5,
-                }} />
-              )}
-              <div>
+                    background: theme.colors.gradientPrimary,
+                    opacity: 0.5,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    color: '#fff',
+                  }}>
+                    {(row.platformName || row.provider || '?').charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <div>
+                  <div style={tableStyles.provider}>
+                    {row.platformName || row.provider}
+                  </div>
+                </div>
+              </div>
+
+              {/* Chain */}
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                <div style={tableStyles.chainBadge(chainColor)}>
+                  {chainLogoSrc && (
+                    <img
+                      src={chainLogoSrc}
+                      alt={row.chainName || row.chain}
+                      width={12}
+                      height={12}
+                      style={{ borderRadius: '50%' }}
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                      }}
+                    />
+                  )}
+                  {row.chainName || row.chain || '...'}
+                </div>
+              </div>
+
+              {/* Asset */}
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                <div style={tableStyles.symbol}>{row.symbol}</div>
+              </div>
+
+              {/* APY */}
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                <div style={tableStyles.apy}>
+                  {row.apy == null ? '...' : `${Number(row.apy).toFixed(2)}%`}
+                </div>
+              </div>
+
+              {/* TVL */}
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                <div style={tableStyles.tvl}>{fmtUsd(row.tvlUsd)}</div>
+              </div>
+
+              {/* Action */}
+              <div style={{ display: 'flex', alignItems: 'center' }}>
                 <a
                   href={row.platformUrl || row.url || '#'}
                   target="_blank"
                   rel="noreferrer"
                   style={{
-                    ...tableStyles.provider,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '8px 14px',
+                    borderRadius: theme.radius.md,
+                    background: theme.colors.gradientPrimary,
+                    color: '#fff',
                     textDecoration: 'none',
-                    color: theme.colors.textPrimary,
+                    fontSize: '12px',
+                    fontWeight: 600,
                     transition: theme.transition.fast,
+                    boxShadow: hoveredRow === idx ? theme.colors.glowPurple : 'none',
                   }}
-                  onMouseEnter={(e) => e.target.style.color = theme.colors.cyberPurpleLight}
-                  onMouseLeave={(e) => e.target.style.color = theme.colors.textPrimary}
                 >
-                  {row.platformName || row.provider}
+                  Deposit
+                  <span style={{ fontSize: '10px' }}>&rarr;</span>
                 </a>
-                <div style={tableStyles.chain}>{row.chain || '...'}</div>
               </div>
             </div>
-            <div style={tableStyles.symbol}>{row.symbol}</div>
-            <div style={tableStyles.apy}>
-              {row.apy == null ? '...' : `${Number(row.apy).toFixed(2)}%`}
-            </div>
-            <div style={tableStyles.tvl}>{fmtUsd(row.tvlUsd)}</div>
-            <div style={tableStyles.risk}>{row.riskNote || 'Standard'}</div>
-          </div>
-        ))
+          );
+        })
       )}
     </div>
   );
@@ -1113,7 +1171,11 @@ function App() {
   const [minScore, setMinScore] = useState(6);
   const [err, setErr] = useState('');
   const [loading, setLoading] = useState(false);
-  const [apyFilter, setApyFilter] = useState('all');
+  // Default to 'dex' filter for DeFi stablecoin yields
+  const [apyFilter, setApyFilter] = useState('dex');
+  // TVL and APY filters
+  const [minTvl, setMinTvl] = useState(1); // in millions
+  const [minApy, setMinApy] = useState(3); // in percentage
 
   const tabs = useMemo(() => [
     { id: 'apy', name: 'Yields', icon: '$' },
@@ -1159,11 +1221,27 @@ function App() {
   }, []);
 
   const filteredApy = useMemo(() => {
-    if (apyFilter === 'all') return apy;
-    if (apyFilter === 'cex') return apy.filter((x) => String(x.chain || '').toLowerCase() === 'cefi');
-    if (apyFilter === 'dex') return apy.filter((x) => String(x.chain || '').toLowerCase() !== 'cefi');
-    return apy;
-  }, [apy, apyFilter]);
+    let result = apy;
+
+    // Apply type filter
+    if (apyFilter === 'cex') {
+      result = result.filter((x) => String(x.chain || '').toLowerCase() === 'cefi');
+    } else if (apyFilter === 'dex') {
+      result = result.filter((x) => String(x.chain || '').toLowerCase() !== 'cefi');
+    }
+
+    // Apply TVL filter (minTvl is in millions)
+    if (minTvl > 0) {
+      result = result.filter((x) => (x.tvlUsd || 0) >= minTvl * 1_000_000);
+    }
+
+    // Apply APY filter
+    if (minApy > 0) {
+      result = result.filter((x) => (x.apy || 0) >= minApy);
+    }
+
+    return result;
+  }, [apy, apyFilter, minTvl, minApy]);
 
   useEffect(() => {
     if (tab === 'news') loadNews().catch(() => {});
@@ -1238,9 +1316,10 @@ function App() {
         {/* Content */}
         {tab === 'apy' && (
           <div style={{ display: 'grid', gap: theme.spacing.lg }}>
+            {/* Filter Bar */}
             <div style={{
               display: 'flex',
-              gap: theme.spacing.sm,
+              gap: theme.spacing.lg,
               flexWrap: 'wrap',
               alignItems: 'center',
               padding: theme.spacing.md,
@@ -1248,27 +1327,108 @@ function App() {
               borderRadius: theme.radius.md,
               border: `1px solid ${theme.colors.border}`,
             }}>
-              <span style={{
+              {/* Type Filter */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: theme.spacing.sm }}>
+                <span style={{
+                  color: theme.colors.textMuted,
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  textTransform: 'uppercase',
+                  letterSpacing: '1px',
+                }}>Type:</span>
+                {[
+                  { id: 'all', label: 'ALL' },
+                  { id: 'dex', label: 'DEX' },
+                  { id: 'cex', label: 'CEX' },
+                ].map((f) => (
+                  <button
+                    key={f.id}
+                    onClick={() => setApyFilter(f.id)}
+                    style={styles.badge(apyFilter === f.id ? 'cyan' : 'default')}
+                  >
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* TVL Filter */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: theme.spacing.sm }}>
+                <span style={{
+                  color: theme.colors.textMuted,
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  textTransform: 'uppercase',
+                  letterSpacing: '1px',
+                }}>Min TVL:</span>
+                <input
+                  type="number"
+                  value={minTvl}
+                  onChange={(e) => setMinTvl(Math.max(0, Number(e.target.value)))}
+                  style={{
+                    width: '70px',
+                    padding: '8px 10px',
+                    borderRadius: theme.radius.md,
+                    border: `1px solid ${theme.colors.border}`,
+                    background: theme.colors.bgInput,
+                    color: theme.colors.neonGreen,
+                    fontSize: '13px',
+                    fontFamily: theme.fonts.mono,
+                    fontWeight: 600,
+                    outline: 'none',
+                    textAlign: 'center',
+                  }}
+                  min={0}
+                  step={1}
+                />
+                <span style={{
+                  color: theme.colors.textMuted,
+                  fontSize: '11px',
+                }}>M</span>
+              </div>
+
+              {/* APY Filter */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: theme.spacing.sm }}>
+                <span style={{
+                  color: theme.colors.textMuted,
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  textTransform: 'uppercase',
+                  letterSpacing: '1px',
+                }}>Min APY:</span>
+                <input
+                  type="number"
+                  value={minApy}
+                  onChange={(e) => setMinApy(Math.max(0, Number(e.target.value)))}
+                  style={{
+                    width: '70px',
+                    padding: '8px 10px',
+                    borderRadius: theme.radius.md,
+                    border: `1px solid ${theme.colors.border}`,
+                    background: theme.colors.bgInput,
+                    color: theme.colors.neonGreen,
+                    fontSize: '13px',
+                    fontFamily: theme.fonts.mono,
+                    fontWeight: 600,
+                    outline: 'none',
+                    textAlign: 'center',
+                  }}
+                  min={0}
+                  step={0.5}
+                />
+                <span style={{
+                  color: theme.colors.textMuted,
+                  fontSize: '11px',
+                }}>%</span>
+              </div>
+
+              {/* Results count */}
+              <div style={{
+                marginLeft: 'auto',
                 color: theme.colors.textMuted,
                 fontSize: '12px',
-                fontWeight: 600,
-                textTransform: 'uppercase',
-                letterSpacing: '1px',
-                marginRight: theme.spacing.sm,
-              }}>Filter:</span>
-              {[
-                { id: 'all', label: 'ALL' },
-                { id: 'cex', label: 'CEX' },
-                { id: 'dex', label: 'DEX' },
-              ].map((f) => (
-                <button
-                  key={f.id}
-                  onClick={() => setApyFilter(f.id)}
-                  style={styles.badge(apyFilter === f.id ? 'cyan' : 'default')}
-                >
-                  {f.label}
-                </button>
-              ))}
+              }}>
+                <span style={{ color: theme.colors.electricCyanLight, fontWeight: 600 }}>{filteredApy.length}</span> pools
+              </div>
             </div>
             <ApyTable data={filteredApy} />
           </div>
