@@ -4,7 +4,7 @@ import { officialDepositUrl } from '../defiLinks.js';
 
 // APY aggregation:
 // - DeFi: DeFiLlama yields API (no key)
-// - CeFi: (MVP) curated opportunities with click-through links; APY may be null until integrated.
+// - CeFi: links are served separately (no APY aggregation for now)
 //
 // DeFiLlama yields API:
 // https://yields.llama.fi/pools
@@ -66,61 +66,7 @@ function llamaPoolUrl(poolId) {
   return poolId ? `https://defillama.com/yields/pool/${poolId}` : null;
 }
 
-function cefiUrl(exchange, asset) {
-  // Best-effort deep links (may change by region/product). We keep them stable and non-brittle.
-  const a = String(asset).toUpperCase();
-  if (exchange === 'binance') {
-    // Binance Simple Earn landing; often supports asset filter via query.
-    return `https://www.binance.com/en/earn?asset=${encodeURIComponent(a)}`;
-  }
-  if (exchange === 'okx') {
-    // OKX Earn landing (fallback: user searches asset inside the page)
-    return `https://www.okx.com/earn`;
-  }
-  if (exchange === 'bybit') {
-    // Bybit Earn landing
-    return `https://www.bybit.com/en/earn/`;
-  }
-  return null;
-}
-
-const CEFI_ASSETS = ['USDT', 'USDC', 'DAI', 'FDUSD', 'PYUSD', 'FRAX', 'USDE', 'USDY', 'USDS'];
-
-const CEFI_OPPORTUNITIES = [
-  ...CEFI_ASSETS.map((asset) => ({
-    externalId: `binance:earn:${asset.toLowerCase()}`,
-    provider: 'Binance Earn',
-    chain: 'CeFi',
-    symbol: asset,
-    apy: null,
-    tvlUsd: null,
-    url: cefiUrl('binance', asset),
-    riskNote: `CeFi (custody risk). Click through to deposit/earn with ${asset}.`,
-    source: 'cefi',
-  })),
-  ...CEFI_ASSETS.map((asset) => ({
-    externalId: `okx:earn:${asset.toLowerCase()}`,
-    provider: 'OKX Earn',
-    chain: 'CeFi',
-    symbol: asset,
-    apy: null,
-    tvlUsd: null,
-    url: cefiUrl('okx', asset),
-    riskNote: `CeFi (custody risk). Click through to deposit/earn with ${asset}.`,
-    source: 'cefi',
-  })),
-  ...CEFI_ASSETS.map((asset) => ({
-    externalId: `bybit:earn:${asset.toLowerCase()}`,
-    provider: 'Bybit Earn',
-    chain: 'CeFi',
-    symbol: asset,
-    apy: null,
-    tvlUsd: null,
-    url: cefiUrl('bybit', asset),
-    riskNote: `CeFi (custody risk). Click through to deposit/earn with ${asset}.`,
-    source: 'cefi',
-  })),
-];
+// CeFi links are handled separately (see src/cexLinks.js)
 
 function riskNoteFromPool(p) {
   // Extremely naive; for MVP we just label by category.
@@ -129,6 +75,25 @@ function riskNoteFromPool(p) {
   const chain = p.chain || '';
   const base = `DeFi (smart-contract risk)`;
   return `${base}${project ? ` • ${project}` : ''}${chain ? ` • ${chain}` : ''}`;
+}
+
+const DEFILLAMA_PROJECT_ALLOWLIST = new Set([
+  'aave-v3',
+  'aave-v2',
+  'morpho-v1',
+  'morpho',
+  'compound-v3',
+  'compound-v2',
+  'euler-v2',
+  'spark',
+  'curve-dex',
+  'yearn-finance',
+]);
+
+function isAllowedProject(project = '') {
+  const p = String(project || '').toLowerCase();
+  if (!p) return false;
+  return DEFILLAMA_PROJECT_ALLOWLIST.has(p);
 }
 
 export async function pollApyOnce() {
@@ -143,6 +108,7 @@ export async function pollApyOnce() {
 
     // pick stable-only pools, sort by apy, require tvl threshold
     const filtered = pools
+      .filter((p) => isAllowedProject(p.project))
       .filter((p) => isStableOnlyPool(p))
       .filter((p) => typeof p.apy === 'number' && p.apy >= 0)
       .filter((p) => (p.tvlUsd ?? 0) >= 1_000_000)
@@ -180,35 +146,8 @@ export async function pollApyOnce() {
       });
     }
 
-    // Seed/refresh CeFi click-through opportunities (APY may be null)
-    for (const c of CEFI_OPPORTUNITIES) {
-      await prisma.apyOpportunity.upsert({
-        where: { externalId: c.externalId },
-        update: {
-          provider: c.provider,
-          chain: c.chain,
-          symbol: c.symbol,
-          apy: c.apy,
-          tvlUsd: c.tvlUsd,
-          url: c.url,
-          riskNote: c.riskNote,
-          source: c.source,
-          updatedAt: new Date(),
-        },
-        create: {
-          externalId: c.externalId,
-          provider: c.provider,
-          chain: c.chain,
-          symbol: c.symbol,
-          apy: c.apy,
-          tvlUsd: c.tvlUsd,
-          url: c.url,
-          riskNote: c.riskNote,
-          source: c.source,
-          updatedAt: new Date(),
-        },
-      });
-    }
+    // Cleanup any previously inserted CeFi rows; CEX is links-only for now.
+    await prisma.apyOpportunity.deleteMany({ where: { source: 'cefi' } });
 
     // Cleanup: keep only recent entries for defillama that were not updated for 2 days
     await prisma.apyOpportunity.deleteMany({

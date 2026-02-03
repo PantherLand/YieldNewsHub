@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { LOGOS } from './logos.js';
+import CexLinks from './CexLinks.jsx';
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8787';
 
@@ -1108,6 +1109,7 @@ function App() {
   const [tab, setTab] = useState('apy');
   const [apy, setApy] = useState([]);
   const [news, setNews] = useState([]);
+  const [cexLinks, setCexLinks] = useState([]);
   const [minScore, setMinScore] = useState(6);
   const [err, setErr] = useState('');
   const [loading, setLoading] = useState(false);
@@ -1115,6 +1117,7 @@ function App() {
 
   const tabs = useMemo(() => [
     { id: 'apy', name: 'Yields', icon: '$' },
+    { id: 'cex', name: 'CEX Links', icon: 'C' },
     { id: 'news', name: 'News', icon: '#' },
     { id: 'settings', name: 'Config', icon: '>' },
   ], []);
@@ -1133,11 +1136,17 @@ function App() {
     setNews(j.data?.items || j.items || []);
   }
 
+  async function loadCexLinks() {
+    const r = await fetch(`${API_BASE}/api/cex-links`);
+    const j = await r.json();
+    setCexLinks(j.data?.items || j.items || []);
+  }
+
   async function refreshData() {
     setLoading(true);
     try {
       setErr('');
-      await Promise.all([loadApy(), loadNews()]);
+      await Promise.all([loadApy(), loadNews(), loadCexLinks()]);
     } catch (e) {
       setErr(String(e?.message || e));
     }
@@ -1264,6 +1273,7 @@ function App() {
             <ApyTable data={filteredApy} />
           </div>
         )}
+        {tab === 'cex' && <CexLinks items={cexLinks} />}
         {tab === 'news' && <NewsList data={news} minScore={minScore} setMinScore={setMinScore} />}
         {tab === 'settings' && <Settings apiBase={API_BASE} />}
 

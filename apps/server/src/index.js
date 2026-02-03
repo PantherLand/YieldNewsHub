@@ -93,6 +93,7 @@ app.get('/api/news', asyncHandler(async (req, res) => {
 }));
 
 import { PLATFORM_META, normalizePlatformKey } from './platforms.js';
+import { getCexLinks } from './cexLinks.js';
 
 /**
  * GET /api/apy
@@ -205,6 +206,14 @@ app.get('/api/sources', asyncHandler(async (_req, res) => {
   const news = await prisma.newsSource.findMany({ orderBy: { name: 'asc' } });
   const apy = await prisma.apySource.findMany({ orderBy: { name: 'asc' } });
   res.json(successResponse({ news, apy }));
+}));
+
+/**
+ * GET /api/cex-links
+ * Returns click-through links for CEX earn pages (no APY aggregation).
+ */
+app.get('/api/cex-links', asyncHandler(async (_req, res) => {
+  res.json(successResponse({ items: getCexLinks() }));
 }));
 
 /**
