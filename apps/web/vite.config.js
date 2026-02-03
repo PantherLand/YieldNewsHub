@@ -6,4 +6,9 @@ export default defineConfig({
   server: {
     port: 5173,
   },
+  preview: {
+    // Railway serves the app on a public host; allow it for Vite preview.
+    // You can tighten this to specific domains later.
+    allowedHosts: 'all',
+  },
 });
