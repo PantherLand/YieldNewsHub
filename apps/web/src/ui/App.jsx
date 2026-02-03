@@ -3,50 +3,66 @@ import { LOGOS } from './logos.js';
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8787';
 
-// Morpho-inspired Design System
+// ============================================
+// YIELDNEWSHUB CYBERPUNK DESIGN SYSTEM
+// Brand Guide v1.0 - Cyberpunk Finance Theme
+// ============================================
+
 const theme = {
-  // Colors - inspired by Blue Morpho butterfly
   colors: {
-    // Backgrounds
-    bgPrimary: '#0a0e14',
-    bgSecondary: '#111827',
-    bgCard: 'rgba(17, 24, 39, 0.8)',
-    bgCardHover: 'rgba(30, 41, 59, 0.9)',
-    bgInput: 'rgba(15, 23, 42, 0.9)',
+    // Primary Colors (Cyberpunk Signature)
+    cyberPurple: '#A855F7',
+    cyberPurpleLight: '#C084FC',
+    cyberPurpleDark: '#7C3AED',
+    electricCyan: '#06B6D4',
+    electricCyanLight: '#22D3EE',
+    neonPink: '#FF007A',
+    neonPinkLight: '#FF3399',
 
-    // Primary blue gradient
-    primary: '#2563eb',
-    primaryLight: '#3b82f6',
-    primaryDark: '#1d4ed8',
-    accent: '#0ea5e9',
+    // Background Colors (Deep & Dark)
+    bgDeep: '#050508',
+    bgDark: '#0D0A1A',
+    bgCard: '#12101F',
+    bgCardHover: '#1A1730',
+    bgInput: '#0F0D1A',
 
-    // Text
-    textPrimary: '#f8fafc',
-    textSecondary: '#94a3b8',
-    textMuted: '#64748b',
+    // Semantic Colors (Neon)
+    neonGreen: '#00FF88',
+    neonGreenMuted: '#10B981',
+    neonOrange: '#FF8800',
+    neonRed: '#FF3366',
 
-    // Borders
-    border: 'rgba(71, 85, 105, 0.4)',
-    borderHover: 'rgba(59, 130, 246, 0.5)',
+    // Text Colors
+    textPrimary: '#F8FAFC',
+    textSecondary: '#A0AEC0',
+    textMuted: '#64748B',
 
-    // Status
-    success: '#10b981',
-    warning: '#f59e0b',
-    error: '#ef4444',
+    // Border Colors
+    border: 'rgba(168, 85, 247, 0.2)',
+    borderHover: 'rgba(168, 85, 247, 0.5)',
+    borderCyan: 'rgba(6, 182, 212, 0.4)',
+    borderPink: 'rgba(255, 0, 122, 0.3)',
 
     // Gradients
-    gradientPrimary: 'linear-gradient(135deg, #2563eb 0%, #0ea5e9 100%)',
-    gradientDark: 'linear-gradient(180deg, #0a0e14 0%, #111827 100%)',
-    gradientGlow: 'radial-gradient(ellipse at 50% 0%, rgba(59, 130, 246, 0.15) 0%, transparent 60%)',
+    gradientPrimary: 'linear-gradient(135deg, #A855F7 0%, #7C3AED 50%, #06B6D4 100%)',
+    gradientPink: 'linear-gradient(135deg, #FF007A 0%, #A855F7 100%)',
+    gradientCyan: 'linear-gradient(135deg, #06B6D4 0%, #A855F7 100%)',
+    gradientDark: 'linear-gradient(180deg, #050508 0%, #0D0A1A 50%, #12101F 100%)',
+    gradientGlow: 'radial-gradient(ellipse at 50% 0%, rgba(168, 85, 247, 0.15) 0%, rgba(6, 182, 212, 0.08) 40%, transparent 70%)',
+    gradientCard: 'linear-gradient(135deg, rgba(168, 85, 247, 0.08) 0%, rgba(6, 182, 212, 0.04) 100%)',
+
+    // Glow Effects
+    glowPurple: '0 0 20px rgba(168, 85, 247, 0.4), 0 0 40px rgba(168, 85, 247, 0.1)',
+    glowCyan: '0 0 20px rgba(6, 182, 212, 0.4), 0 0 40px rgba(6, 182, 212, 0.1)',
+    glowPink: '0 0 20px rgba(255, 0, 122, 0.4)',
+    glowGreen: '0 0 15px rgba(0, 255, 136, 0.4)',
   },
 
-  // Typography
   fonts: {
-    sans: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-    mono: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace',
+    sans: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+    mono: "'JetBrains Mono', 'SF Mono', Monaco, Consolas, monospace",
   },
 
-  // Spacing
   spacing: {
     xs: '4px',
     sm: '8px',
@@ -54,27 +70,26 @@ const theme = {
     lg: '24px',
     xl: '32px',
     xxl: '48px',
+    xxxl: '64px',
   },
 
-  // Border radius
   radius: {
-    sm: '8px',
+    sm: '6px',
     md: '12px',
     lg: '16px',
     xl: '24px',
     full: '9999px',
   },
 
-  // Transitions
   transition: {
-    fast: 'all 0.15s ease',
-    normal: 'all 0.25s ease',
-    slow: 'all 0.4s ease',
+    fast: 'all 0.15s ease-out',
+    normal: 'all 0.25s ease-out',
+    slow: 'all 0.4s ease-out',
   },
 };
 
-// Custom Logo SVG Component - Morpho butterfly inspired with yield chart
-function LogoIcon({ size = 40 }) {
+// Custom Logo SVG - Cyberpunk Yield Butterfly
+function LogoIcon({ size = 48 }) {
   return (
     <svg
       width={size}
@@ -85,95 +100,93 @@ function LogoIcon({ size = 40 }) {
       style={{ display: 'block' }}
     >
       <defs>
-        {/* Main blue gradient */}
-        <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#1e3a8a" />
-          <stop offset="50%" stopColor="#2563eb" />
-          <stop offset="100%" stopColor="#0ea5e9" />
+        {/* Main cyberpunk gradient */}
+        <linearGradient id="cyberGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#A855F7" />
+          <stop offset="50%" stopColor="#7C3AED" />
+          <stop offset="100%" stopColor="#06B6D4" />
         </linearGradient>
-        {/* Glow effect */}
-        <radialGradient id="glowGrad" cx="50%" cy="30%" r="60%">
-          <stop offset="0%" stopColor="#60a5fa" stopOpacity="0.4" />
-          <stop offset="100%" stopColor="#1e40af" stopOpacity="0" />
-        </radialGradient>
-        {/* Left wing gradient */}
-        <linearGradient id="wingLeft" x1="0%" y1="50%" x2="100%" y2="50%">
-          <stop offset="0%" stopColor="#06b6d4" />
-          <stop offset="100%" stopColor="#3b82f6" />
+        {/* Pink accent gradient */}
+        <linearGradient id="pinkGrad" x1="0%" y1="50%" x2="100%" y2="50%">
+          <stop offset="0%" stopColor="#FF007A" />
+          <stop offset="100%" stopColor="#A855F7" />
         </linearGradient>
-        {/* Right wing gradient */}
-        <linearGradient id="wingRight" x1="100%" y1="50%" x2="0%" y2="50%">
-          <stop offset="0%" stopColor="#06b6d4" />
-          <stop offset="100%" stopColor="#3b82f6" />
+        {/* Cyan wing */}
+        <linearGradient id="cyanWing" x1="100%" y1="50%" x2="0%" y2="50%">
+          <stop offset="0%" stopColor="#06B6D4" />
+          <stop offset="100%" stopColor="#A855F7" />
         </linearGradient>
-        {/* Chart line gradient */}
-        <linearGradient id="chartGrad" x1="0%" y1="100%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor="#10b981" />
-          <stop offset="50%" stopColor="#34d399" />
-          <stop offset="100%" stopColor="#6ee7b7" />
+        {/* Neon green chart */}
+        <linearGradient id="neonChart" x1="0%" y1="100%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#00FF88" />
+          <stop offset="100%" stopColor="#22D3EE" />
         </linearGradient>
-        {/* Shine effect */}
-        <linearGradient id="shine" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="white" stopOpacity="0.3" />
-          <stop offset="50%" stopColor="white" stopOpacity="0.1" />
-          <stop offset="100%" stopColor="white" stopOpacity="0" />
-        </linearGradient>
-        {/* Drop shadow */}
-        <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-          <feDropShadow dx="0" dy="2" stdDeviation="2" floodColor="#0ea5e9" floodOpacity="0.3" />
+        {/* Glow filter */}
+        <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="2" result="blur" />
+          <feMerge>
+            <feMergeNode in="blur" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+        {/* Strong glow */}
+        <filter id="strongGlow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="3" result="blur" />
+          <feMerge>
+            <feMergeNode in="blur" />
+            <feMergeNode in="blur" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
         </filter>
       </defs>
 
-      {/* Background circle with gradient */}
-      <circle cx="24" cy="24" r="23" fill="url(#bgGrad)" />
+      {/* Background circle */}
+      <circle cx="24" cy="24" r="23" fill="url(#cyberGrad)" />
 
-      {/* Inner glow */}
-      <circle cx="24" cy="24" r="20" fill="url(#glowGrad)" />
+      {/* Inner dark circle */}
+      <circle cx="24" cy="24" r="20" fill="#0D0A1A" opacity="0.6" />
 
-      {/* Butterfly wings - left */}
+      {/* Left wing */}
       <path
-        d="M24 24 C18 18, 8 16, 6 24 C4 32, 14 34, 24 24"
-        fill="url(#wingLeft)"
+        d="M24 24 C18 17, 6 15, 5 24 C4 33, 16 35, 24 24"
+        fill="url(#pinkGrad)"
         opacity="0.9"
-        filter="url(#shadow)"
+        filter="url(#glow)"
       />
 
-      {/* Butterfly wings - right */}
+      {/* Right wing */}
       <path
-        d="M24 24 C30 18, 40 16, 42 24 C44 32, 34 34, 24 24"
-        fill="url(#wingRight)"
+        d="M24 24 C30 17, 42 15, 43 24 C44 33, 32 35, 24 24"
+        fill="url(#cyanWing)"
         opacity="0.9"
-        filter="url(#shadow)"
+        filter="url(#glow)"
       />
 
-      {/* Butterfly body - center */}
-      <ellipse cx="24" cy="24" rx="2.5" ry="8" fill="#f0f9ff" opacity="0.95" />
+      {/* Body */}
+      <ellipse cx="24" cy="24" rx="2" ry="7" fill="#F8FAFC" opacity="0.95" />
 
-      {/* Yield chart line - upward trend */}
+      {/* Yield chart line */}
       <path
-        d="M10 34 L16 30 L22 32 L28 26 L34 22 L38 14"
-        stroke="url(#chartGrad)"
+        d="M10 34 L15 30 L21 32 L27 25 L33 21 L38 13"
+        stroke="url(#neonChart)"
         strokeWidth="2.5"
         strokeLinecap="round"
         strokeLinejoin="round"
         fill="none"
-        filter="url(#shadow)"
+        filter="url(#strongGlow)"
       />
 
-      {/* Chart end point glow */}
-      <circle cx="38" cy="14" r="3" fill="#34d399" opacity="0.8" />
-      <circle cx="38" cy="14" r="1.5" fill="#ecfdf5" />
+      {/* Chart end point */}
+      <circle cx="38" cy="13" r="3" fill="#00FF88" filter="url(#glow)" />
+      <circle cx="38" cy="13" r="1.5" fill="#F8FAFC" />
 
-      {/* Top shine effect */}
-      <ellipse cx="18" cy="14" rx="8" ry="4" fill="url(#shine)" />
-
-      {/* Subtle ring */}
-      <circle cx="24" cy="24" r="22" stroke="white" strokeWidth="0.5" opacity="0.2" fill="none" />
+      {/* Outer ring */}
+      <circle cx="24" cy="24" r="22.5" stroke="url(#cyberGrad)" strokeWidth="1" fill="none" opacity="0.6" />
     </svg>
   );
 }
 
-// Common styles
+// Common styles with Cyberpunk theme
 const styles = {
   container: {
     fontFamily: theme.fonts.sans,
@@ -182,24 +195,60 @@ const styles = {
     color: theme.colors.textPrimary,
     padding: theme.spacing.lg,
     position: 'relative',
+    overflow: 'hidden',
   },
 
+  // Cyberpunk glow overlay
   glowOverlay: {
     position: 'fixed',
     top: 0,
     left: 0,
     right: 0,
-    height: '400px',
+    height: '500px',
     background: theme.colors.gradientGlow,
     pointerEvents: 'none',
     zIndex: 0,
   },
 
+  // Scanline effect
+  scanlines: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundImage: `repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(168, 85, 247, 0.02) 2px,
+      rgba(168, 85, 247, 0.02) 4px
+    )`,
+    pointerEvents: 'none',
+    zIndex: 1,
+  },
+
+  // Grid pattern
+  gridPattern: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundImage: `
+      linear-gradient(rgba(168, 85, 247, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(168, 85, 247, 0.03) 1px, transparent 1px)
+    `,
+    backgroundSize: '50px 50px',
+    pointerEvents: 'none',
+    zIndex: 0,
+  },
+
   content: {
-    maxWidth: '1200px',
+    maxWidth: '1280px',
     margin: '0 auto',
     position: 'relative',
-    zIndex: 1,
+    zIndex: 2,
   },
 
   header: {
@@ -218,36 +267,41 @@ const styles = {
   },
 
   logoIcon: {
-    width: '48px',
-    height: '48px',
+    width: '52px',
+    height: '52px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
+    filter: 'drop-shadow(0 0 10px rgba(168, 85, 247, 0.5))',
   },
 
   title: {
-    fontSize: '24px',
-    fontWeight: 700,
+    fontSize: '28px',
+    fontWeight: 800,
     background: theme.colors.gradientPrimary,
     WebkitBackgroundClip: 'text',
     WebkitTextFillColor: 'transparent',
     backgroundClip: 'text',
     margin: 0,
+    letterSpacing: '-0.5px',
+    textShadow: '0 0 30px rgba(168, 85, 247, 0.3)',
   },
 
   subtitle: {
     color: theme.colors.textSecondary,
-    fontSize: '14px',
+    fontSize: '13px',
     marginTop: '4px',
+    letterSpacing: '0.5px',
   },
 
   nav: {
     display: 'flex',
-    gap: theme.spacing.sm,
+    gap: theme.spacing.xs,
     background: theme.colors.bgCard,
     padding: '6px',
     borderRadius: theme.radius.lg,
     border: `1px solid ${theme.colors.border}`,
+    backdropFilter: 'blur(12px)',
   },
 
   navButton: (active) => ({
@@ -257,41 +311,46 @@ const styles = {
     background: active ? theme.colors.gradientPrimary : 'transparent',
     color: active ? '#fff' : theme.colors.textSecondary,
     cursor: 'pointer',
-    fontSize: '14px',
-    fontWeight: 500,
+    fontSize: '13px',
+    fontWeight: 600,
     transition: theme.transition.fast,
+    boxShadow: active ? theme.colors.glowPurple : 'none',
+    letterSpacing: '0.3px',
   }),
 
   refreshButton: {
-    padding: '10px 16px',
+    padding: '10px 18px',
     borderRadius: theme.radius.md,
     border: `1px solid ${theme.colors.border}`,
     background: theme.colors.bgCard,
     color: theme.colors.textSecondary,
     cursor: 'pointer',
-    fontSize: '14px',
+    fontSize: '13px',
     fontWeight: 500,
     transition: theme.transition.fast,
     display: 'flex',
     alignItems: 'center',
     gap: theme.spacing.sm,
+    backdropFilter: 'blur(12px)',
   },
 
   card: {
     background: theme.colors.bgCard,
     border: `1px solid ${theme.colors.border}`,
     borderRadius: theme.radius.lg,
-    backdropFilter: 'blur(12px)',
+    backdropFilter: 'blur(16px)',
     overflow: 'hidden',
+    boxShadow: '0 4px 24px rgba(0, 0, 0, 0.3)',
   },
 
   error: {
     padding: theme.spacing.md,
-    background: 'rgba(239, 68, 68, 0.1)',
-    border: `1px solid ${theme.colors.error}`,
+    background: 'rgba(255, 51, 102, 0.1)',
+    border: `1px solid ${theme.colors.borderPink}`,
     borderRadius: theme.radius.md,
-    color: theme.colors.error,
+    color: theme.colors.neonRed,
     marginBottom: theme.spacing.lg,
+    boxShadow: '0 0 20px rgba(255, 51, 102, 0.1)',
   },
 
   footer: {
@@ -309,16 +368,44 @@ const styles = {
 
   badge: (variant = 'default') => {
     const variants = {
-      default: { background: 'rgba(100, 116, 139, 0.2)', color: theme.colors.textSecondary },
-      primary: { background: 'rgba(37, 99, 235, 0.2)', color: theme.colors.primaryLight },
-      success: { background: 'rgba(16, 185, 129, 0.2)', color: theme.colors.success },
-      warning: { background: 'rgba(245, 158, 11, 0.2)', color: theme.colors.warning },
+      default: {
+        background: 'rgba(100, 116, 139, 0.15)',
+        color: theme.colors.textSecondary,
+        border: '1px solid rgba(100, 116, 139, 0.2)',
+      },
+      primary: {
+        background: 'rgba(168, 85, 247, 0.15)',
+        color: theme.colors.cyberPurpleLight,
+        border: `1px solid ${theme.colors.border}`,
+      },
+      success: {
+        background: 'rgba(0, 255, 136, 0.1)',
+        color: theme.colors.neonGreen,
+        border: '1px solid rgba(0, 255, 136, 0.2)',
+      },
+      warning: {
+        background: 'rgba(255, 136, 0, 0.1)',
+        color: theme.colors.neonOrange,
+        border: '1px solid rgba(255, 136, 0, 0.2)',
+      },
+      pink: {
+        background: 'rgba(255, 0, 122, 0.1)',
+        color: theme.colors.neonPink,
+        border: `1px solid ${theme.colors.borderPink}`,
+      },
+      cyan: {
+        background: 'rgba(6, 182, 212, 0.1)',
+        color: theme.colors.electricCyanLight,
+        border: `1px solid ${theme.colors.borderCyan}`,
+      },
     };
     return {
       fontSize: '11px',
-      padding: '4px 10px',
+      padding: '5px 12px',
       borderRadius: theme.radius.full,
-      fontWeight: 500,
+      fontWeight: 600,
+      cursor: 'pointer',
+      transition: theme.transition.fast,
       ...variants[variant],
     };
   },
@@ -333,57 +420,66 @@ function fmtUsd(x) {
   return `$${v.toFixed(2)}`;
 }
 
-// APY Table Component
+// APY Table Component with Cyberpunk styling
 function ApyTable({ data }) {
   const [hoveredRow, setHoveredRow] = useState(null);
 
   const tableStyles = {
     header: {
       display: 'grid',
-      gridTemplateColumns: '1.5fr 0.8fr 0.7fr 0.8fr 1.2fr',
-      padding: '14px 20px',
-      background: 'rgba(15, 23, 42, 0.6)',
+      gridTemplateColumns: '1.5fr 0.8fr 0.8fr 0.8fr 1.2fr',
+      padding: '16px 24px',
+      background: 'linear-gradient(90deg, rgba(168, 85, 247, 0.1) 0%, rgba(6, 182, 212, 0.05) 100%)',
       borderBottom: `1px solid ${theme.colors.border}`,
-      fontSize: '12px',
-      fontWeight: 600,
+      fontSize: '11px',
+      fontWeight: 700,
       color: theme.colors.textMuted,
       textTransform: 'uppercase',
-      letterSpacing: '0.5px',
+      letterSpacing: '1px',
     },
     row: (isHovered) => ({
       display: 'grid',
-      gridTemplateColumns: '1.5fr 0.8fr 0.7fr 0.8fr 1.2fr',
-      padding: '16px 20px',
+      gridTemplateColumns: '1.5fr 0.8fr 0.8fr 0.8fr 1.2fr',
+      padding: '18px 24px',
       borderBottom: `1px solid ${theme.colors.border}`,
-      background: isHovered ? theme.colors.bgCardHover : 'transparent',
+      background: isHovered
+        ? `linear-gradient(90deg, ${theme.colors.bgCardHover} 0%, rgba(168, 85, 247, 0.05) 100%)`
+        : 'transparent',
       transition: theme.transition.fast,
       cursor: 'default',
+      borderLeft: isHovered ? `3px solid ${theme.colors.cyberPurple}` : '3px solid transparent',
     }),
     provider: {
       fontWeight: 600,
       color: theme.colors.textPrimary,
+      fontSize: '14px',
     },
     chain: {
-      fontSize: '12px',
+      fontSize: '11px',
       color: theme.colors.textMuted,
       marginTop: '4px',
+      fontFamily: theme.fonts.mono,
     },
     symbol: {
       fontFamily: theme.fonts.mono,
-      color: theme.colors.accent,
-      fontWeight: 500,
+      color: theme.colors.electricCyanLight,
+      fontWeight: 600,
+      fontSize: '13px',
     },
     apy: {
       fontWeight: 700,
       fontSize: '16px',
-      color: theme.colors.success,
+      color: theme.colors.neonGreen,
+      fontFamily: theme.fonts.mono,
+      textShadow: '0 0 10px rgba(0, 255, 136, 0.3)',
     },
     tvl: {
       fontFamily: theme.fonts.mono,
       color: theme.colors.textSecondary,
+      fontSize: '13px',
     },
     risk: {
-      fontSize: '13px',
+      fontSize: '12px',
       color: theme.colors.textMuted,
     },
   };
@@ -392,14 +488,20 @@ function ApyTable({ data }) {
     <div style={styles.card}>
       <div style={tableStyles.header}>
         <div>Platform</div>
-        <div>Symbol</div>
+        <div>Asset</div>
         <div>APY</div>
         <div>TVL</div>
-        <div>Risk Assessment</div>
+        <div>Risk Level</div>
       </div>
       {data.length === 0 ? (
-        <div style={{ padding: theme.spacing.xl, textAlign: 'center', color: theme.colors.textMuted }}>
-          No data available
+        <div style={{
+          padding: theme.spacing.xl,
+          textAlign: 'center',
+          color: theme.colors.textMuted,
+          background: theme.colors.gradientCard,
+        }}>
+          <div style={{ fontSize: '24px', marginBottom: theme.spacing.sm }}>...</div>
+          No yield opportunities found
         </div>
       ) : (
         data.map((row, idx) => (
@@ -411,28 +513,61 @@ function ApyTable({ data }) {
           >
             <div style={{ display: 'flex', gap: theme.spacing.md, alignItems: 'center' }}>
               {row.logoKey && LOGOS[row.logoKey] ? (
-                <img src={LOGOS[row.logoKey]} alt={row.platformName || row.provider} width={22} height={22} style={{ borderRadius: theme.radius.md }} />
+                <img
+                  src={LOGOS[row.logoKey]}
+                  alt={row.platformName || row.provider}
+                  width={28}
+                  height={28}
+                  style={{
+                    borderRadius: theme.radius.sm,
+                    border: `1px solid ${theme.colors.border}`,
+                  }}
+                />
               ) : row.logoUrl ? (
-                <img src={row.logoUrl} alt={row.platformName || row.provider} width={22} height={22} style={{ borderRadius: theme.radius.md }} />
+                <img
+                  src={row.logoUrl}
+                  alt={row.platformName || row.provider}
+                  width={28}
+                  height={28}
+                  style={{
+                    borderRadius: theme.radius.sm,
+                    border: `1px solid ${theme.colors.border}`,
+                  }}
+                />
               ) : (
-                <div style={{ width: 22, height: 22, borderRadius: theme.radius.md, background: theme.colors.border }} />
+                <div style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: theme.radius.sm,
+                  background: theme.colors.gradientPrimary,
+                  opacity: 0.5,
+                }} />
               )}
               <div>
                 <a
                   href={row.platformUrl || row.url || '#'}
                   target="_blank"
                   rel="noreferrer"
-                  style={{ ...tableStyles.provider, textDecoration: 'none', color: theme.colors.textPrimary }}
+                  style={{
+                    ...tableStyles.provider,
+                    textDecoration: 'none',
+                    color: theme.colors.textPrimary,
+                    transition: theme.transition.fast,
+                  }}
+                  onMouseEnter={(e) => e.target.style.color = theme.colors.cyberPurpleLight}
+                  onMouseLeave={(e) => e.target.style.color = theme.colors.textPrimary}
                 >
                   {row.platformName || row.provider}
                 </a>
-                <div style={tableStyles.chain}>{row.chain || '—'}</div>
+                <div style={tableStyles.chain}>{row.chain || '...'}</div>
               </div>
             </div>
             <div style={tableStyles.symbol}>{row.symbol}</div>
-            <div style={tableStyles.apy}>{row.apy == null ? '—' : `${Number(row.apy).toFixed(2)}%`}</div>
+            <div style={tableStyles.apy}>
+              {row.apy == null ? '...' : `${Number(row.apy).toFixed(2)}%`}
+            </div>
             <div style={tableStyles.tvl}>{fmtUsd(row.tvlUsd)}</div>
-            <div style={tableStyles.risk}>{row.riskNote || 'Standard risk'}</div>
+            <div style={tableStyles.risk}>{row.riskNote || 'Standard'}</div>
           </div>
         ))
       )}
@@ -440,21 +575,33 @@ function ApyTable({ data }) {
   );
 }
 
-// News Card Component
+// News Card Component with Cyberpunk styling
 function NewsCard({ item }) {
   const [isHovered, setIsHovered] = useState(false);
+
+  const getScoreColor = (score) => {
+    if (score >= 8) return { bg: 'rgba(0, 255, 136, 0.1)', color: theme.colors.neonGreen, border: 'rgba(0, 255, 136, 0.3)' };
+    if (score >= 5) return { bg: 'rgba(255, 136, 0, 0.1)', color: theme.colors.neonOrange, border: 'rgba(255, 136, 0, 0.3)' };
+    return { bg: 'rgba(100, 116, 139, 0.1)', color: theme.colors.textMuted, border: 'rgba(100, 116, 139, 0.2)' };
+  };
+
+  const scoreStyle = getScoreColor(item.score);
 
   const cardStyles = {
     container: {
       display: 'block',
       padding: theme.spacing.lg,
-      background: isHovered ? theme.colors.bgCardHover : theme.colors.bgCard,
+      background: isHovered
+        ? `linear-gradient(135deg, ${theme.colors.bgCardHover} 0%, rgba(168, 85, 247, 0.05) 100%)`
+        : theme.colors.bgCard,
       border: `1px solid ${isHovered ? theme.colors.borderHover : theme.colors.border}`,
       borderRadius: theme.radius.lg,
       textDecoration: 'none',
       color: 'inherit',
       transition: theme.transition.normal,
-      transform: isHovered ? 'translateY(-2px)' : 'none',
+      transform: isHovered ? 'translateY(-3px)' : 'none',
+      boxShadow: isHovered ? theme.colors.glowPurple : '0 4px 16px rgba(0, 0, 0, 0.2)',
+      borderLeft: isHovered ? `3px solid ${theme.colors.cyberPurple}` : '3px solid transparent',
     },
     header: {
       display: 'flex',
@@ -464,47 +611,41 @@ function NewsCard({ item }) {
       marginBottom: theme.spacing.sm,
     },
     title: {
-      fontSize: '16px',
+      fontSize: '15px',
       fontWeight: 600,
       color: theme.colors.textPrimary,
-      lineHeight: 1.4,
+      lineHeight: 1.5,
     },
     score: {
       display: 'flex',
       alignItems: 'center',
-      gap: '4px',
-      padding: '4px 10px',
-      background: item.score >= 8
-        ? 'rgba(16, 185, 129, 0.2)'
-        : item.score >= 5
-          ? 'rgba(245, 158, 11, 0.2)'
-          : 'rgba(100, 116, 139, 0.2)',
+      gap: '6px',
+      padding: '6px 12px',
+      background: scoreStyle.bg,
       borderRadius: theme.radius.full,
       fontSize: '12px',
-      fontWeight: 600,
-      color: item.score >= 8
-        ? theme.colors.success
-        : item.score >= 5
-          ? theme.colors.warning
-          : theme.colors.textMuted,
+      fontWeight: 700,
+      color: scoreStyle.color,
       whiteSpace: 'nowrap',
+      border: `1px solid ${scoreStyle.border}`,
+      fontFamily: theme.fonts.mono,
     },
     meta: {
       display: 'flex',
       alignItems: 'center',
       gap: theme.spacing.sm,
-      fontSize: '13px',
+      fontSize: '12px',
       color: theme.colors.textMuted,
       marginBottom: theme.spacing.md,
     },
     source: {
-      color: theme.colors.accent,
-      fontWeight: 500,
+      color: theme.colors.electricCyanLight,
+      fontWeight: 600,
     },
     summary: {
-      fontSize: '14px',
+      fontSize: '13px',
       color: theme.colors.textSecondary,
-      lineHeight: 1.6,
+      lineHeight: 1.7,
       marginBottom: theme.spacing.md,
     },
     tags: {
@@ -513,12 +654,15 @@ function NewsCard({ item }) {
       flexWrap: 'wrap',
     },
     tag: {
-      fontSize: '11px',
+      fontSize: '10px',
       padding: '4px 10px',
       borderRadius: theme.radius.full,
-      background: 'rgba(37, 99, 235, 0.15)',
-      color: theme.colors.primaryLight,
-      fontWeight: 500,
+      background: 'rgba(168, 85, 247, 0.1)',
+      color: theme.colors.cyberPurpleLight,
+      fontWeight: 600,
+      border: `1px solid ${theme.colors.border}`,
+      textTransform: 'uppercase',
+      letterSpacing: '0.5px',
     },
   };
 
@@ -534,14 +678,14 @@ function NewsCard({ item }) {
       <div style={cardStyles.header}>
         <div style={cardStyles.title}>{item.title}</div>
         <div style={cardStyles.score}>
-          <span>★</span>
+          <span style={{ filter: 'brightness(1.5)' }}>*</span>
           <span>{item.score}</span>
         </div>
       </div>
       <div style={cardStyles.meta}>
         <span style={cardStyles.source}>{item.source?.name || 'Unknown'}</span>
-        <span>•</span>
-        <span>{item.publishedAt ? new Date(item.publishedAt).toLocaleString() : '—'}</span>
+        <span style={{ color: theme.colors.cyberPurple }}>|</span>
+        <span>{item.publishedAt ? new Date(item.publishedAt).toLocaleString() : '...'}</span>
       </div>
       {item.summary && <div style={cardStyles.summary}>{item.summary}</div>}
       {item.tags?.length > 0 && (
@@ -567,26 +711,29 @@ function NewsList({ data, minScore, setMinScore }) {
       background: theme.colors.bgCard,
       borderRadius: theme.radius.md,
       border: `1px solid ${theme.colors.border}`,
+      backdropFilter: 'blur(12px)',
     },
     label: {
       color: theme.colors.textSecondary,
-      fontSize: '14px',
-      fontWeight: 500,
+      fontSize: '13px',
+      fontWeight: 600,
     },
     input: {
-      width: '80px',
+      width: '70px',
       padding: '10px 12px',
       borderRadius: theme.radius.md,
       border: `1px solid ${theme.colors.border}`,
       background: theme.colors.bgInput,
-      color: theme.colors.textPrimary,
+      color: theme.colors.neonGreen,
       fontSize: '14px',
       fontFamily: theme.fonts.mono,
+      fontWeight: 600,
       outline: 'none',
+      textAlign: 'center',
     },
     hint: {
       color: theme.colors.textMuted,
-      fontSize: '12px',
+      fontSize: '11px',
     },
     grid: {
       display: 'grid',
@@ -597,7 +744,7 @@ function NewsList({ data, minScore, setMinScore }) {
   return (
     <div>
       <div style={filterStyles.container}>
-        <span style={filterStyles.label}>Minimum Score:</span>
+        <span style={filterStyles.label}>Min Score:</span>
         <input
           type="number"
           value={minScore}
@@ -606,12 +753,20 @@ function NewsList({ data, minScore, setMinScore }) {
           min={1}
           max={10}
         />
-        <span style={filterStyles.hint}>1 = all news, 10 = most important only</span>
+        <span style={filterStyles.hint}>1 = all | 10 = critical only</span>
       </div>
       <div style={filterStyles.grid}>
         {data.length === 0 ? (
-          <div style={{ padding: theme.spacing.xl, textAlign: 'center', color: theme.colors.textMuted }}>
-            No news matching your criteria
+          <div style={{
+            padding: theme.spacing.xl,
+            textAlign: 'center',
+            color: theme.colors.textMuted,
+            background: theme.colors.bgCard,
+            borderRadius: theme.radius.lg,
+            border: `1px solid ${theme.colors.border}`,
+          }}>
+            <div style={{ fontSize: '24px', marginBottom: theme.spacing.sm }}>...</div>
+            No news matching criteria
           </div>
         ) : (
           data.map(item => <NewsCard key={item.id} item={item} />)
@@ -621,7 +776,7 @@ function NewsList({ data, minScore, setMinScore }) {
   );
 }
 
-// Settings Component
+// Settings Component with Cyberpunk styling
 function Settings({ apiBase }) {
   const [botToken, setBotToken] = useState('');
   const [chatId, setChatId] = useState('');
@@ -633,18 +788,27 @@ function Settings({ apiBase }) {
     container: {
       ...styles.card,
       padding: theme.spacing.lg,
+      background: `linear-gradient(135deg, ${theme.colors.bgCard} 0%, rgba(168, 85, 247, 0.03) 100%)`,
     },
     title: {
-      fontSize: '18px',
+      fontSize: '20px',
       fontWeight: 700,
       color: theme.colors.textPrimary,
       marginBottom: theme.spacing.lg,
       display: 'flex',
       alignItems: 'center',
-      gap: theme.spacing.sm,
+      gap: theme.spacing.md,
     },
     icon: {
-      fontSize: '24px',
+      width: '40px',
+      height: '40px',
+      borderRadius: theme.radius.md,
+      background: theme.colors.gradientCyan,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontSize: '20px',
+      boxShadow: theme.colors.glowCyan,
     },
     section: {
       marginBottom: theme.spacing.lg,
@@ -659,29 +823,29 @@ function Settings({ apiBase }) {
       marginBottom: theme.spacing.md,
     },
     checkbox: {
-      width: '18px',
-      height: '18px',
-      accentColor: theme.colors.primary,
+      width: '20px',
+      height: '20px',
+      accentColor: theme.colors.cyberPurple,
     },
     grid: {
       display: 'grid',
       gridTemplateColumns: '1fr 1fr',
-      gap: theme.spacing.md,
+      gap: theme.spacing.lg,
     },
     inputGroup: {
       marginBottom: theme.spacing.md,
     },
     inputLabel: {
-      fontSize: '12px',
+      fontSize: '11px',
       color: theme.colors.textMuted,
       marginBottom: theme.spacing.xs,
-      fontWeight: 500,
+      fontWeight: 700,
       textTransform: 'uppercase',
-      letterSpacing: '0.5px',
+      letterSpacing: '1px',
     },
     input: {
       width: '100%',
-      padding: '12px 14px',
+      padding: '14px 16px',
       borderRadius: theme.radius.md,
       border: `1px solid ${theme.colors.border}`,
       background: theme.colors.bgInput,
@@ -696,45 +860,48 @@ function Settings({ apiBase }) {
       display: 'flex',
       gap: theme.spacing.md,
       alignItems: 'center',
-      marginTop: theme.spacing.lg,
+      marginTop: theme.spacing.xl,
     },
     primaryButton: {
-      padding: '12px 24px',
+      padding: '14px 28px',
       borderRadius: theme.radius.md,
       border: 'none',
       background: theme.colors.gradientPrimary,
       color: '#fff',
       fontSize: '14px',
-      fontWeight: 600,
+      fontWeight: 700,
       cursor: 'pointer',
       transition: theme.transition.fast,
+      boxShadow: theme.colors.glowPurple,
+      letterSpacing: '0.5px',
     },
     secondaryButton: {
-      padding: '12px 24px',
+      padding: '14px 28px',
       borderRadius: theme.radius.md,
-      border: `1px solid ${theme.colors.border}`,
+      border: `1px solid ${theme.colors.borderCyan}`,
       background: 'transparent',
-      color: theme.colors.textSecondary,
+      color: theme.colors.electricCyanLight,
       fontSize: '14px',
-      fontWeight: 500,
+      fontWeight: 600,
       cursor: 'pointer',
       transition: theme.transition.fast,
     },
     message: (isError) => ({
       fontSize: '13px',
-      color: isError ? theme.colors.error : theme.colors.success,
+      color: isError ? theme.colors.neonRed : theme.colors.neonGreen,
       display: 'flex',
       alignItems: 'center',
       gap: theme.spacing.sm,
+      fontFamily: theme.fonts.mono,
     }),
     note: {
-      marginTop: theme.spacing.lg,
+      marginTop: theme.spacing.xl,
       padding: theme.spacing.md,
-      background: 'rgba(245, 158, 11, 0.1)',
+      background: 'rgba(255, 136, 0, 0.08)',
       borderRadius: theme.radius.md,
-      border: `1px solid rgba(245, 158, 11, 0.3)`,
-      fontSize: '13px',
-      color: theme.colors.warning,
+      border: '1px solid rgba(255, 136, 0, 0.2)',
+      fontSize: '12px',
+      color: theme.colors.neonOrange,
     },
   };
 
@@ -751,12 +918,12 @@ function Settings({ apiBase }) {
       // Support both old format (j.ok) and new format (j.success)
       const isSuccess = j.success || j.ok;
       if (isSuccess) {
-        setMsg('Settings saved successfully');
+        setMsg('> Settings saved successfully');
       } else {
-        setMsg(`Error: ${j.error?.message || JSON.stringify(j.error || j)}`);
+        setMsg(`[ ERROR ] ${j.error?.message || JSON.stringify(j.error || j)}`);
       }
     } catch (e) {
-      setMsg(`Error: ${e.message}`);
+      setMsg(`[ ERROR ] ${e.message}`);
     }
     setLoading(false);
   }
@@ -770,12 +937,12 @@ function Settings({ apiBase }) {
       // Support both old format (j.ok) and new format (j.success)
       const isSuccess = j.success || j.ok;
       if (isSuccess) {
-        setMsg('Test message sent!');
+        setMsg('> Test message sent!');
       } else {
-        setMsg(`Error: ${j.error?.message || JSON.stringify(j.error || j)}`);
+        setMsg(`[ ERROR ] ${j.error?.message || JSON.stringify(j.error || j)}`);
       }
     } catch (e) {
-      setMsg(`Error: ${e.message}`);
+      setMsg(`[ ERROR ] ${e.message}`);
     }
     setLoading(false);
   }
@@ -783,8 +950,8 @@ function Settings({ apiBase }) {
   return (
     <div style={settingsStyles.container}>
       <div style={settingsStyles.title}>
-        <span style={settingsStyles.icon}>✈</span>
-        Telegram Integration
+        <div style={settingsStyles.icon}>T</div>
+        <span>Telegram Integration</span>
       </div>
 
       <div style={settingsStyles.section}>
@@ -795,7 +962,7 @@ function Settings({ apiBase }) {
             onChange={(e) => setEnabled(e.target.checked)}
             style={settingsStyles.checkbox}
           />
-          Enable Telegram notifications for important news
+          Enable Telegram notifications for high-priority news
         </label>
       </div>
 
@@ -822,88 +989,116 @@ function Settings({ apiBase }) {
 
       <div style={settingsStyles.actions}>
         <button onClick={save} disabled={loading} style={settingsStyles.primaryButton}>
-          {loading ? 'Saving...' : 'Save Settings'}
+          {loading ? 'Processing...' : 'Save Config'}
         </button>
         <button onClick={test} disabled={loading} style={settingsStyles.secondaryButton}>
-          Send Test Message
+          Test Connection
         </button>
         {msg && (
-          <div style={settingsStyles.message(msg.includes('Error'))}>
+          <div style={settingsStyles.message(msg.includes('ERROR'))}>
             {msg}
           </div>
         )}
       </div>
 
       <div style={settingsStyles.note}>
-        <strong>Note:</strong> This is an MVP feature. Telegram credentials are stored in the database.
-        For production use, consider implementing proper secret management.
+        <strong>[ ! ]</strong> MVP mode: Credentials stored in database. Implement proper secret management for production.
       </div>
     </div>
   );
 }
 
-// Stats Bar Component
+// Stats Bar Component with Cyberpunk styling
 function StatsBar({ apyCount, newsCount }) {
   const statsStyles = {
     container: {
       display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+      gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
       gap: theme.spacing.md,
-      marginBottom: theme.spacing.lg,
+      marginBottom: theme.spacing.xl,
     },
-    card: {
+    card: (accent) => ({
       background: theme.colors.bgCard,
       border: `1px solid ${theme.colors.border}`,
-      borderRadius: theme.radius.md,
+      borderRadius: theme.radius.lg,
       padding: theme.spacing.lg,
       display: 'flex',
       alignItems: 'center',
       gap: theme.spacing.md,
-    },
-    icon: {
-      width: '48px',
-      height: '48px',
+      position: 'relative',
+      overflow: 'hidden',
+      backdropFilter: 'blur(12px)',
+      borderLeft: `3px solid ${accent}`,
+    }),
+    iconBox: (gradient, glow) => ({
+      width: '52px',
+      height: '52px',
       borderRadius: theme.radius.md,
+      background: gradient,
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      fontSize: '24px',
-    },
+      fontSize: '22px',
+      boxShadow: glow,
+      flexShrink: 0,
+    }),
     label: {
-      fontSize: '13px',
+      fontSize: '12px',
       color: theme.colors.textMuted,
-      marginBottom: '4px',
+      marginBottom: '6px',
+      textTransform: 'uppercase',
+      letterSpacing: '1px',
+      fontWeight: 600,
     },
     value: {
-      fontSize: '24px',
-      fontWeight: 700,
+      fontSize: '28px',
+      fontWeight: 800,
       color: theme.colors.textPrimary,
+      fontFamily: theme.fonts.mono,
+      letterSpacing: '-1px',
     },
   };
 
+  const stats = [
+    {
+      label: 'Yield Opportunities',
+      value: apyCount,
+      icon: '$',
+      accent: theme.colors.neonGreen,
+      gradient: 'linear-gradient(135deg, rgba(0, 255, 136, 0.2) 0%, rgba(16, 185, 129, 0.1) 100%)',
+      glow: theme.colors.glowGreen,
+    },
+    {
+      label: 'News Articles',
+      value: newsCount,
+      icon: '#',
+      accent: theme.colors.cyberPurple,
+      gradient: 'linear-gradient(135deg, rgba(168, 85, 247, 0.2) 0%, rgba(124, 58, 237, 0.1) 100%)',
+      glow: theme.colors.glowPurple,
+    },
+    {
+      label: 'Data Feed',
+      value: 'LIVE',
+      icon: '>',
+      accent: theme.colors.electricCyan,
+      gradient: 'linear-gradient(135deg, rgba(6, 182, 212, 0.2) 0%, rgba(34, 211, 238, 0.1) 100%)',
+      glow: theme.colors.glowCyan,
+    },
+  ];
+
   return (
     <div style={statsStyles.container}>
-      <div style={statsStyles.card}>
-        <div style={{ ...statsStyles.icon, background: 'rgba(16, 185, 129, 0.2)' }}>📈</div>
-        <div>
-          <div style={statsStyles.label}>Active Yield Opportunities</div>
-          <div style={statsStyles.value}>{apyCount}</div>
+      {stats.map((stat, idx) => (
+        <div key={idx} style={statsStyles.card(stat.accent)}>
+          <div style={statsStyles.iconBox(stat.gradient, stat.glow)}>
+            {stat.icon}
+          </div>
+          <div>
+            <div style={statsStyles.label}>{stat.label}</div>
+            <div style={statsStyles.value}>{stat.value}</div>
+          </div>
         </div>
-      </div>
-      <div style={statsStyles.card}>
-        <div style={{ ...statsStyles.icon, background: 'rgba(37, 99, 235, 0.2)' }}>📰</div>
-        <div>
-          <div style={statsStyles.label}>News Articles</div>
-          <div style={statsStyles.value}>{newsCount}</div>
-        </div>
-      </div>
-      <div style={statsStyles.card}>
-        <div style={{ ...statsStyles.icon, background: 'rgba(245, 158, 11, 0.2)' }}>🔄</div>
-        <div>
-          <div style={statsStyles.label}>Data Updates</div>
-          <div style={statsStyles.value}>Real-time</div>
-        </div>
-      </div>
+      ))}
     </div>
   );
 }
@@ -916,12 +1111,12 @@ function App() {
   const [minScore, setMinScore] = useState(6);
   const [err, setErr] = useState('');
   const [loading, setLoading] = useState(false);
-  const [apyFilter, setApyFilter] = useState('all'); // all | cex | dex
+  const [apyFilter, setApyFilter] = useState('all');
 
   const tabs = useMemo(() => [
-    { id: 'apy', name: 'Yield Opportunities', icon: '📊' },
-    { id: 'news', name: 'Market News', icon: '📰' },
-    { id: 'settings', name: 'Settings', icon: '⚙' },
+    { id: 'apy', name: 'Yields', icon: '$' },
+    { id: 'news', name: 'News', icon: '#' },
+    { id: 'settings', name: 'Config', icon: '>' },
   ], []);
 
   async function loadApy() {
@@ -968,19 +1163,21 @@ function App() {
 
   return (
     <div style={styles.container}>
-      {/* Glow effect */}
+      {/* Cyberpunk background effects */}
+      <div style={styles.gridPattern} />
       <div style={styles.glowOverlay} />
+      <div style={styles.scanlines} />
 
       <div style={styles.content}>
         {/* Header */}
         <div style={styles.header}>
           <div style={styles.logo}>
             <div style={styles.logoIcon}>
-              <LogoIcon size={48} />
+              <LogoIcon size={52} />
             </div>
             <div>
               <h1 style={styles.title}>YieldNewsHub</h1>
-              <div style={styles.subtitle}>Low-risk stablecoin yields & market intelligence</div>
+              <div style={styles.subtitle}>// Low-risk stablecoin yields & market intelligence</div>
             </div>
           </div>
 
@@ -992,7 +1189,11 @@ function App() {
                   onClick={() => setTab(t.id)}
                   style={styles.navButton(tab === t.id)}
                 >
-                  <span style={{ marginRight: '6px' }}>{t.icon}</span>
+                  <span style={{
+                    marginRight: '6px',
+                    opacity: 0.7,
+                    fontFamily: theme.fonts.mono,
+                  }}>{t.icon}</span>
                   {t.name}
                 </button>
               ))}
@@ -1004,13 +1205,15 @@ function App() {
               style={{
                 ...styles.refreshButton,
                 opacity: loading ? 0.6 : 1,
+                borderColor: loading ? theme.colors.borderCyan : theme.colors.border,
               }}
             >
               <span style={{
                 display: 'inline-block',
                 animation: loading ? 'spin 1s linear infinite' : 'none',
-              }}>↻</span>
-              {loading ? 'Loading...' : 'Refresh'}
+                fontFamily: theme.fonts.mono,
+              }}>@</span>
+              {loading ? 'Syncing...' : 'Refresh'}
             </button>
           </div>
         </div>
@@ -1021,13 +1224,29 @@ function App() {
         )}
 
         {/* Error */}
-        {err && <div style={styles.error}>⚠ {err}</div>}
+        {err && <div style={styles.error}>[ ERROR ] {err}</div>}
 
         {/* Content */}
         {tab === 'apy' && (
           <div style={{ display: 'grid', gap: theme.spacing.lg }}>
-            <div style={{ display: 'flex', gap: theme.spacing.sm, flexWrap: 'wrap', alignItems: 'center' }}>
-              <span style={{ color: theme.colors.textMuted, fontSize: 13 }}>Filter:</span>
+            <div style={{
+              display: 'flex',
+              gap: theme.spacing.sm,
+              flexWrap: 'wrap',
+              alignItems: 'center',
+              padding: theme.spacing.md,
+              background: theme.colors.bgCard,
+              borderRadius: theme.radius.md,
+              border: `1px solid ${theme.colors.border}`,
+            }}>
+              <span style={{
+                color: theme.colors.textMuted,
+                fontSize: '12px',
+                fontWeight: 600,
+                textTransform: 'uppercase',
+                letterSpacing: '1px',
+                marginRight: theme.spacing.sm,
+              }}>Filter:</span>
               {[
                 { id: 'all', label: 'ALL' },
                 { id: 'cex', label: 'CEX' },
@@ -1036,7 +1255,7 @@ function App() {
                 <button
                   key={f.id}
                   onClick={() => setApyFilter(f.id)}
-                  style={styles.badge(apyFilter === f.id ? 'primary' : 'default')}
+                  style={styles.badge(apyFilter === f.id ? 'cyan' : 'default')}
                 >
                   {f.label}
                 </button>
@@ -1050,27 +1269,45 @@ function App() {
 
         {/* Footer */}
         <div style={styles.footer}>
-          <div>
-            <span style={{ color: theme.colors.accent }}>●</span> Connected to: <code style={{
+          <div style={{ display: 'flex', alignItems: 'center', gap: theme.spacing.sm }}>
+            <span style={{
+              color: theme.colors.neonGreen,
+              textShadow: `0 0 10px ${theme.colors.neonGreen}`,
+              fontFamily: theme.fonts.mono,
+            }}>*</span>
+            <span>Connected:</span>
+            <code style={{
               fontFamily: theme.fonts.mono,
               background: theme.colors.bgCard,
-              padding: '2px 8px',
+              padding: '4px 10px',
               borderRadius: theme.radius.sm,
-              marginLeft: '4px',
+              border: `1px solid ${theme.colors.border}`,
+              color: theme.colors.electricCyanLight,
+              fontSize: '11px',
             }}>{API_BASE}</code>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: theme.spacing.md }}>
-            <span>Built with 💙 for DeFi</span>
-            <span style={styles.badge('primary')}>v1.0 MVP</span>
+            <span style={{ fontFamily: theme.fonts.mono }}>// Built for DeFi</span>
+            <span style={styles.badge('pink')}>v1.0</span>
           </div>
         </div>
       </div>
 
-      {/* CSS for animations */}
+      {/* CSS Animations */}
       <style>{`
         @keyframes spin {
           from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
+        }
+
+        @keyframes glowPulse {
+          0%, 100% { box-shadow: 0 0 20px rgba(168, 85, 247, 0.3); }
+          50% { box-shadow: 0 0 30px rgba(168, 85, 247, 0.5), 0 0 60px rgba(6, 182, 212, 0.2); }
+        }
+
+        @keyframes scanlineMove {
+          0% { background-position: 0 0; }
+          100% { background-position: 0 100vh; }
         }
 
         * {
@@ -1080,39 +1317,52 @@ function App() {
         body {
           margin: 0;
           padding: 0;
-          background: ${theme.colors.bgPrimary};
+          background: ${theme.colors.bgDeep};
+        }
+
+        /* Custom selection */
+        ::selection {
+          background: rgba(168, 85, 247, 0.3);
+          color: ${theme.colors.textPrimary};
         }
 
         input:focus {
           border-color: ${theme.colors.borderHover} !important;
-          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+          box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.15), ${theme.colors.glowPurple};
         }
 
         button:hover:not(:disabled) {
-          opacity: 0.9;
-          transform: translateY(-1px);
+          transform: translateY(-2px);
+          box-shadow: ${theme.colors.glowPurple};
         }
 
         button:active:not(:disabled) {
           transform: translateY(0);
         }
 
+        /* Scrollbar */
         ::-webkit-scrollbar {
           width: 8px;
           height: 8px;
         }
 
         ::-webkit-scrollbar-track {
-          background: ${theme.colors.bgSecondary};
+          background: ${theme.colors.bgDark};
         }
 
         ::-webkit-scrollbar-thumb {
-          background: ${theme.colors.border};
+          background: linear-gradient(180deg, ${theme.colors.cyberPurple} 0%, ${theme.colors.electricCyan} 100%);
           border-radius: 4px;
         }
 
         ::-webkit-scrollbar-thumb:hover {
-          background: ${theme.colors.textMuted};
+          background: ${theme.colors.cyberPurpleLight};
+        }
+
+        /* Number input arrows */
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+          opacity: 1;
         }
       `}</style>
     </div>
