@@ -72,37 +72,102 @@ const theme = {
   },
 };
 
-// Custom Logo SVG Component
+// Custom Logo SVG Component - Morpho butterfly inspired with yield chart
 function LogoIcon({ size = 40 }) {
   return (
     <svg
       width={size}
       height={size}
-      viewBox="0 0 40 40"
+      viewBox="0 0 48 48"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       style={{ display: 'block' }}
     >
       <defs>
-        <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#2563eb" />
-          <stop offset="50%" stopColor="#3b82f6" />
+        {/* Main blue gradient */}
+        <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#1e3a8a" />
+          <stop offset="50%" stopColor="#2563eb" />
           <stop offset="100%" stopColor="#0ea5e9" />
         </linearGradient>
-        <linearGradient id="arrowGradient" x1="0%" y1="100%" x2="100%" y2="0%">
-          <stop offset="0%" stopColor="#10b981" />
-          <stop offset="100%" stopColor="#34d399" />
+        {/* Glow effect */}
+        <radialGradient id="glowGrad" cx="50%" cy="30%" r="60%">
+          <stop offset="0%" stopColor="#60a5fa" stopOpacity="0.4" />
+          <stop offset="100%" stopColor="#1e40af" stopOpacity="0" />
+        </radialGradient>
+        {/* Left wing gradient */}
+        <linearGradient id="wingLeft" x1="0%" y1="50%" x2="100%" y2="50%">
+          <stop offset="0%" stopColor="#06b6d4" />
+          <stop offset="100%" stopColor="#3b82f6" />
         </linearGradient>
+        {/* Right wing gradient */}
+        <linearGradient id="wingRight" x1="100%" y1="50%" x2="0%" y2="50%">
+          <stop offset="0%" stopColor="#06b6d4" />
+          <stop offset="100%" stopColor="#3b82f6" />
+        </linearGradient>
+        {/* Chart line gradient */}
+        <linearGradient id="chartGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#10b981" />
+          <stop offset="50%" stopColor="#34d399" />
+          <stop offset="100%" stopColor="#6ee7b7" />
+        </linearGradient>
+        {/* Shine effect */}
+        <linearGradient id="shine" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="white" stopOpacity="0.3" />
+          <stop offset="50%" stopColor="white" stopOpacity="0.1" />
+          <stop offset="100%" stopColor="white" stopOpacity="0" />
+        </linearGradient>
+        {/* Drop shadow */}
+        <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow dx="0" dy="2" stdDeviation="2" floodColor="#0ea5e9" floodOpacity="0.3" />
+        </filter>
       </defs>
-      {/* Background rounded square */}
-      <rect x="0" y="0" width="40" height="40" rx="10" fill="url(#logoGradient)" />
-      {/* Yield arrow pointing up */}
+
+      {/* Background circle with gradient */}
+      <circle cx="24" cy="24" r="23" fill="url(#bgGrad)" />
+
+      {/* Inner glow */}
+      <circle cx="24" cy="24" r="20" fill="url(#glowGrad)" />
+
+      {/* Butterfly wings - left */}
       <path
-        d="M20 8L28 18H23V26H17V18H12L20 8Z"
-        fill="url(#arrowGradient)"
+        d="M24 24 C18 18, 8 16, 6 24 C4 32, 14 34, 24 24"
+        fill="url(#wingLeft)"
+        opacity="0.9"
+        filter="url(#shadow)"
       />
-      {/* Bottom bar representing stability/foundation */}
-      <rect x="12" y="28" width="16" height="4" rx="2" fill="rgba(255,255,255,0.9)" />
+
+      {/* Butterfly wings - right */}
+      <path
+        d="M24 24 C30 18, 40 16, 42 24 C44 32, 34 34, 24 24"
+        fill="url(#wingRight)"
+        opacity="0.9"
+        filter="url(#shadow)"
+      />
+
+      {/* Butterfly body - center */}
+      <ellipse cx="24" cy="24" rx="2.5" ry="8" fill="#f0f9ff" opacity="0.95" />
+
+      {/* Yield chart line - upward trend */}
+      <path
+        d="M10 34 L16 30 L22 32 L28 26 L34 22 L38 14"
+        stroke="url(#chartGrad)"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        fill="none"
+        filter="url(#shadow)"
+      />
+
+      {/* Chart end point glow */}
+      <circle cx="38" cy="14" r="3" fill="#34d399" opacity="0.8" />
+      <circle cx="38" cy="14" r="1.5" fill="#ecfdf5" />
+
+      {/* Top shine effect */}
+      <ellipse cx="18" cy="14" rx="8" ry="4" fill="url(#shine)" />
+
+      {/* Subtle ring */}
+      <circle cx="24" cy="24" r="22" stroke="white" strokeWidth="0.5" opacity="0.2" fill="none" />
     </svg>
   );
 }
@@ -152,8 +217,8 @@ const styles = {
   },
 
   logoIcon: {
-    width: '40px',
-    height: '40px',
+    width: '48px',
+    height: '48px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -872,7 +937,7 @@ function App() {
         <div style={styles.header}>
           <div style={styles.logo}>
             <div style={styles.logoIcon}>
-              <LogoIcon size={40} />
+              <LogoIcon size={48} />
             </div>
             <div>
               <h1 style={styles.title}>YieldNewsHub</h1>
