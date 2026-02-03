@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { LOGOS, CHAIN_LOGOS, CHAIN_COLORS } from './logos.js';
 import CexLinks from './CexLinks.jsx';
 import { WalletConnectButton } from '../wallet/WalletConnectButton.jsx';
+import { LanguageToggle } from './LanguageToggle.jsx';
+import { useLanguage } from '../i18n/index.js';
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8787';
 
@@ -424,6 +426,7 @@ function fmtUsd(x) {
 
 // APY Table Component with Cyberpunk styling
 function ApyTable({ data }) {
+  const { t } = useLanguage();
   const [hoveredRow, setHoveredRow] = useState(null);
 
   const tableStyles = {
@@ -495,12 +498,12 @@ function ApyTable({ data }) {
   return (
     <div style={styles.card}>
       <div style={tableStyles.header}>
-        <div>Protocol</div>
-        <div>Chain</div>
-        <div>Asset</div>
-        <div>APY</div>
-        <div>TVL</div>
-        <div>Action</div>
+        <div>{t('tableProtocol')}</div>
+        <div>{t('tableChain')}</div>
+        <div>{t('tableAsset')}</div>
+        <div>{t('tableApy')}</div>
+        <div>{t('tableTvl')}</div>
+        <div>{t('tableAction')}</div>
       </div>
       {data.length === 0 ? (
         <div style={{
@@ -510,7 +513,7 @@ function ApyTable({ data }) {
           background: theme.colors.gradientCard,
         }}>
           <div style={{ fontSize: '24px', marginBottom: theme.spacing.sm }}>...</div>
-          No yield opportunities found
+          {t('noData')}
         </div>
       ) : (
         data.map((row, idx) => {
@@ -623,7 +626,7 @@ function ApyTable({ data }) {
                     boxShadow: hoveredRow === idx ? theme.colors.glowPurple : 'none',
                   }}
                 >
-                  Deposit
+                  {t('deposit')}
                   <span style={{ fontSize: '10px' }}>&rarr;</span>
                 </a>
               </div>
@@ -838,6 +841,7 @@ function NewsList({ data, minScore, setMinScore }) {
 
 // Settings Component with Cyberpunk styling
 function Settings({ apiBase }) {
+  const { t } = useLanguage();
   const [botToken, setBotToken] = useState('');
   const [chatId, setChatId] = useState('');
   const [enabled, setEnabled] = useState(false);
@@ -1011,7 +1015,7 @@ function Settings({ apiBase }) {
     <div style={settingsStyles.container}>
       <div style={settingsStyles.title}>
         <div style={settingsStyles.icon}>T</div>
-        <span>Telegram Integration</span>
+        <span>{t('settingsTelegramTitle')}</span>
       </div>
 
       <div style={settingsStyles.section}>
@@ -1022,26 +1026,26 @@ function Settings({ apiBase }) {
             onChange={(e) => setEnabled(e.target.checked)}
             style={settingsStyles.checkbox}
           />
-          Enable Telegram notifications for high-priority news
+          {t('settingsTelegramDescription')}
         </label>
       </div>
 
       <div style={settingsStyles.grid}>
         <div style={settingsStyles.inputGroup}>
-          <div style={settingsStyles.inputLabel}>Bot Token</div>
+          <div style={settingsStyles.inputLabel}>{t('settingsBotToken')}</div>
           <input
             value={botToken}
             onChange={(e) => setBotToken(e.target.value)}
-            placeholder="123456:ABC-DEF..."
+            placeholder={t('settingsBotTokenPlaceholder')}
             style={settingsStyles.input}
           />
         </div>
         <div style={settingsStyles.inputGroup}>
-          <div style={settingsStyles.inputLabel}>Chat ID</div>
+          <div style={settingsStyles.inputLabel}>{t('settingsChatId')}</div>
           <input
             value={chatId}
             onChange={(e) => setChatId(e.target.value)}
-            placeholder="-100123456789"
+            placeholder={t('settingsChatIdPlaceholder')}
             style={settingsStyles.input}
           />
         </div>
@@ -1049,10 +1053,10 @@ function Settings({ apiBase }) {
 
       <div style={settingsStyles.actions}>
         <button onClick={save} disabled={loading} style={settingsStyles.primaryButton}>
-          {loading ? 'Processing...' : 'Save Config'}
+          {loading ? t('settingsSaving') : t('settingsSave')}
         </button>
         <button onClick={test} disabled={loading} style={settingsStyles.secondaryButton}>
-          Test Connection
+          {loading ? t('settingsTesting') : t('settingsTest')}
         </button>
         {msg && (
           <div style={settingsStyles.message(msg.includes('ERROR'))}>
@@ -1070,6 +1074,7 @@ function Settings({ apiBase }) {
 
 // Stats Bar Component with Cyberpunk styling
 function StatsBar({ apyCount, newsCount }) {
+  const { t } = useLanguage();
   const statsStyles = {
     container: {
       display: 'grid',
@@ -1121,7 +1126,7 @@ function StatsBar({ apyCount, newsCount }) {
 
   const stats = [
     {
-      label: 'Yield Opportunities',
+      label: t('statsYieldOpportunities'),
       value: apyCount,
       icon: '$',
       accent: theme.colors.neonGreen,
@@ -1129,7 +1134,7 @@ function StatsBar({ apyCount, newsCount }) {
       glow: theme.colors.glowGreen,
     },
     {
-      label: 'News Articles',
+      label: t('statsNewsAlerts'),
       value: newsCount,
       icon: '#',
       accent: theme.colors.cyberPurple,
@@ -1137,7 +1142,7 @@ function StatsBar({ apyCount, newsCount }) {
       glow: theme.colors.glowPurple,
     },
     {
-      label: 'Data Feed',
+      label: t('statsTracking'),
       value: 'LIVE',
       icon: '>',
       accent: theme.colors.electricCyan,
@@ -1165,6 +1170,7 @@ function StatsBar({ apyCount, newsCount }) {
 
 // Main App Component
 function App() {
+  const { t } = useLanguage();
   const [tab, setTab] = useState('apy');
   const [apy, setApy] = useState([]);
   const [news, setNews] = useState([]);
@@ -1192,11 +1198,11 @@ function App() {
   }, [apy]);
 
   const tabs = useMemo(() => [
-    { id: 'apy', name: 'Yields', icon: '$' },
-    { id: 'cex', name: 'CEX Links', icon: 'C' },
-    { id: 'news', name: 'News', icon: '#' },
-    { id: 'settings', name: 'Config', icon: '>' },
-  ], []);
+    { id: 'apy', name: t('tabYields'), icon: '$' },
+    { id: 'cex', name: t('tabCexLinks'), icon: 'C' },
+    { id: 'news', name: t('tabNews'), icon: '#' },
+    { id: 'settings', name: t('tabConfig'), icon: '>' },
+  ], [t]);
 
   async function loadApy() {
     const r = await fetch(`${API_BASE}/api/apy?limit=50`);
@@ -1282,25 +1288,25 @@ function App() {
               <LogoIcon size={52} />
             </div>
             <div>
-              <h1 style={styles.title}>YieldNewsHub</h1>
-              <div style={styles.subtitle}>// Low-risk stablecoin yields & market intelligence</div>
+              <h1 style={styles.title}>{t('title')}</h1>
+              <div style={styles.subtitle}>{t('subtitle')}</div>
             </div>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: theme.spacing.md }}>
             <div style={styles.nav}>
-              {tabs.map(t => (
+              {tabs.map(tabItem => (
                 <button
-                  key={t.id}
-                  onClick={() => setTab(t.id)}
-                  style={styles.navButton(tab === t.id)}
+                  key={tabItem.id}
+                  onClick={() => setTab(tabItem.id)}
+                  style={styles.navButton(tab === tabItem.id)}
                 >
                   <span style={{
                     marginRight: '6px',
                     opacity: 0.7,
                     fontFamily: theme.fonts.mono,
-                  }}>{t.icon}</span>
-                  {t.name}
+                  }}>{tabItem.icon}</span>
+                  {tabItem.name}
                 </button>
               ))}
             </div>
@@ -1319,9 +1325,10 @@ function App() {
                 animation: loading ? 'spin 1s linear infinite' : 'none',
                 fontFamily: theme.fonts.mono,
               }}>@</span>
-              {loading ? 'Syncing...' : 'Refresh'}
+              {loading ? t('syncing') : t('refresh')}
             </button>
 
+            <LanguageToggle />
             <WalletConnectButton />
           </div>
         </div>
@@ -1356,11 +1363,11 @@ function App() {
                   fontWeight: 600,
                   textTransform: 'uppercase',
                   letterSpacing: '1px',
-                }}>Type:</span>
+                }}>{t('filterType')}</span>
                 {[
-                  { id: 'all', label: 'ALL' },
-                  { id: 'dex', label: 'DEX' },
-                  { id: 'cex', label: 'CEX' },
+                  { id: 'all', label: t('filterAll') },
+                  { id: 'dex', label: t('filterDex') },
+                  { id: 'cex', label: t('filterCex') },
                 ].map((f) => (
                   <button
                     key={f.id}
@@ -1381,7 +1388,7 @@ function App() {
                     fontWeight: 600,
                     textTransform: 'uppercase',
                     letterSpacing: '1px',
-                  }}>Chain:</span>
+                  }}>{t('filterChain')}</span>
                   <select
                     value={selectedChain}
                     onChange={(e) => setSelectedChain(e.target.value)}
@@ -1398,7 +1405,7 @@ function App() {
                       minWidth: '120px',
                     }}
                   >
-                    <option value="all">All Chains</option>
+                    <option value="all">{t('filterAllChains')}</option>
                     {availableChains.map((chain) => (
                       <option key={chain} value={chain} style={{
                         color: CHAIN_COLORS[chain] || theme.colors.textPrimary,

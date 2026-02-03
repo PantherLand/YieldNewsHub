@@ -7,18 +7,21 @@ import '@rainbow-me/rainbowkit/styles.css';
 
 import { config } from './wallet/config.js';
 import { cyberpunkTheme } from './wallet/theme.js';
+import { LanguageProvider } from './i18n/index.js';
 import App from './ui/App.jsx';
 
 const queryClient = new QueryClient();
 
 createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <WagmiProvider config={config}>
-      <QueryClientProvider client={queryClient}>
-        <RainbowKitProvider theme={cyberpunkTheme} modalSize="compact">
-          <App />
-        </RainbowKitProvider>
-      </QueryClientProvider>
-    </WagmiProvider>
+    <LanguageProvider>
+      <WagmiProvider config={config}>
+        <QueryClientProvider client={queryClient}>
+          <RainbowKitProvider theme={cyberpunkTheme} modalSize="compact">
+            <App />
+          </RainbowKitProvider>
+        </QueryClientProvider>
+      </WagmiProvider>
+    </LanguageProvider>
   </React.StrictMode>
 );
