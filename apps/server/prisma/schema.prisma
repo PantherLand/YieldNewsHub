@@ -60,7 +60,7 @@ model ApyOpportunity {
   symbol      String
   assetKind   AssetKind @default(STABLECOIN)
 
-  apy         Float
+  apy         Float?
   tvlUsd      Float?
 
   url         String?
