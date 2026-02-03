@@ -1,5 +1,6 @@
 import fetch from 'node-fetch';
 import { prisma } from '../db.js';
+import { officialDepositUrl } from '../defiLinks.js';
 
 // APY aggregation:
 // - DeFi: DeFiLlama yields API (no key)
@@ -15,17 +16,40 @@ function isStableSymbol(sym = '') {
 }
 
 function parseSymbols(symbol = '') {
-  // Accept formats like: "USDC", "USDC-USDT", "USDC/USDT", "USDC+USDT", "USDC, USDT"
+  // Normalize and extract token-like parts.
+  // Examples:
+  // - "USDC" => ["USDC"]
+  // - "USDC-USDT" => ["USDC","USDT"]
+  // - "USDC/USDT" => ["USDC","USDT"]
+  // - "USDC+USDT" => ["USDC","USDT"]
+  // - "USDC-USDT (LP)" => ["USDC","USDT","LP"] (LP will later fail stable check)
   const s = String(symbol || '').toUpperCase();
+  // Replace non-alphanumerics with a delimiter, then split.
   return s
-    .replace(/\s+/g, '')
-    .split(/[-/+,:]/g)
+    .replace(/[^A-Z0-9]+/g, '-')
+    .split('-')
     .filter(Boolean);
 }
 
+const DENY_CHAINS = new Set(['solana', 'sui', 'aptos']);
+
+function isAllowedChain(chain = '') {
+  const c = String(chain || '').toLowerCase();
+  if (!c) return true;
+  return !DENY_CHAINS.has(c);
+}
+
 function isStableOnlyPool(p) {
+  // Drop chains we don't want in MVP (e.g. Solana)
+  if (!isAllowedChain(p?.chain)) return false;
+
   // Prefer DeFiLlama's stablecoin flag if present
-  if (p?.stablecoin === true) return true;
+  if (p?.stablecoin === true) {
+    // Still reject if symbol clearly includes a non-stable (defensive)
+    const parts = parseSymbols(p?.symbol || '');
+    if (parts.some((sym) => sym && !isStableSymbol(sym))) return false;
+    return true;
+  }
 
   const parts = parseSymbols(p?.symbol || '');
   if (!parts.length) return false;
@@ -107,7 +131,7 @@ export async function pollApyOnce() {
 
     for (const p of filtered) {
       const externalId = p.pool;
-      const url = llamaPoolUrl(p.pool);
+      const url = officialDepositUrl(p.project, { chain: p.chain, symbol: p.symbol }) || llamaPoolUrl(p.pool);
       await prisma.apyOpportunity.upsert({
         where: { externalId },
         update: {
