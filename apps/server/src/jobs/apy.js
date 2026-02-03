@@ -71,15 +71,8 @@ function isStableOnlyPool(p) {
     if (isNonStableSymbol(sym)) return false;
   }
 
-  // For pools with DeFiLlama's stablecoin flag
-  if (p?.stablecoin === true) {
-    // Additional check: ensure no unknown tokens mixed in
-    // Allow if at least one recognized stablecoin is present
-    const hasStable = parts.some((sym) => isStableSymbol(sym));
-    return hasStable;
-  }
-
-  // For pools without the stablecoin flag, require ALL tokens to be stablecoins
+  // 严格要求：所有代币都必须是已知的稳定币
+  // 这样可以过滤掉稳定币和其他币的LP，只保留纯稳定币资产
   for (const sym of parts) {
     if (!isStableSymbol(sym)) return false;
   }
