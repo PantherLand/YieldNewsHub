@@ -180,13 +180,24 @@ app.get('/api/apy', asyncHandler(async (req, res) => {
 
   // Enrich with platform and chain metadata
   const enrichedItems = items.map((it) => {
-    const key = normalizePlatformKey(it.provider) || (it.source === 'defillama' ? 'defillama' : null);
+    const key = normalizePlatformKey(it.provider);
     const meta = key ? PLATFORM_META[key] : null;
     const chainMeta = getChainMeta(it.chain);
+
+    // Format provider name for display (e.g., "aave-v3" -> "Aave V3")
+    const formatProviderName = (provider) => {
+      if (!provider) return null;
+      return provider
+        .split('-')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+    };
+
     return {
       ...it,
       platformKey: key,
-      platformName: meta?.name || null,
+      // Use meta name if available, otherwise format the raw provider name
+      platformName: meta?.name || formatProviderName(it.provider),
       logoKey: meta?.logoKey || null,
       logoUrl: meta?.logoUrl || null,
       platformUrl: it.url || meta?.homeUrl || null,

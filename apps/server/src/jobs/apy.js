@@ -9,10 +9,32 @@ import { officialDepositUrl } from '../defiLinks.js';
 // DeFiLlama yields API:
 // https://yields.llama.fi/pools
 
-const STABLE_SYMBOLS = new Set(['USDC', 'USDT', 'DAI', 'USDE', 'USDS', 'FRAX', 'TUSD', 'FDUSD', 'PYUSD', 'USD0', 'USDY']);
+// 主流稳定币白名单
+const STABLE_SYMBOLS = new Set([
+  'USDC', 'USDT', 'DAI', 'USDE', 'USDS',
+  'FRAX', 'TUSD', 'FDUSD', 'PYUSD', 'USD0', 'USDY',
+  'LUSD', 'GUSD', 'BUSD', 'CUSD', 'SUSD', 'EUSD',
+  'GHO', 'CRVUSD', 'MKUSD', 'DOLA',
+]);
+
+// 非稳定币关键词黑名单 - 用于过滤掉包含这些代币的池子
+const NON_STABLE_KEYWORDS = new Set([
+  'ETH', 'WETH', 'STETH', 'WSTETH', 'RETH', 'CBETH', 'FRXETH',
+  'BTC', 'WBTC', 'TBTC', 'SBTC', 'RENBTC', 'HBTC',
+  'CRV', 'CVX', 'AAVE', 'COMP', 'UNI', 'SUSHI', 'BAL',
+  'LINK', 'MKR', 'SNX', 'YFI', 'LDO', 'RPL',
+  'MATIC', 'ARB', 'OP', 'AVAX', 'FTM', 'SOL',
+  'LP', 'SLP', 'BPT', // LP token markers
+]);
 
 function isStableSymbol(sym = '') {
-  return STABLE_SYMBOLS.has(String(sym).toUpperCase());
+  const s = String(sym).toUpperCase();
+  return STABLE_SYMBOLS.has(s);
+}
+
+function isNonStableSymbol(sym = '') {
+  const s = String(sym).toUpperCase();
+  return NON_STABLE_KEYWORDS.has(s);
 }
 
 function parseSymbols(symbol = '') {
@@ -20,9 +42,7 @@ function parseSymbols(symbol = '') {
   // Examples:
   // - "USDC" => ["USDC"]
   // - "USDC-USDT" => ["USDC","USDT"]
-  // - "USDC/USDT" => ["USDC","USDT"]
-  // - "USDC+USDT" => ["USDC","USDT"]
-  // - "USDC-USDT (LP)" => ["USDC","USDT","LP"] (LP will later fail stable check)
+  // - "crvUSD" => ["CRVUSD"]
   const s = String(symbol || '').toUpperCase();
   // Replace non-alphanumerics with a delimiter, then split.
   return s
@@ -43,18 +63,23 @@ function isStableOnlyPool(p) {
   // Drop chains we don't want in MVP (e.g. Solana)
   if (!isAllowedChain(p?.chain)) return false;
 
-  // Prefer DeFiLlama's stablecoin flag if present
-  if (p?.stablecoin === true) {
-    // Still reject if symbol clearly includes a non-stable (defensive)
-    const parts = parseSymbols(p?.symbol || '');
-    if (parts.some((sym) => sym && !isStableSymbol(sym))) return false;
-    return true;
-  }
-
   const parts = parseSymbols(p?.symbol || '');
   if (!parts.length) return false;
 
-  // If any non-stable symbol shows up, reject.
+  // Reject if any non-stable token is found (ETH, BTC, etc.)
+  for (const sym of parts) {
+    if (isNonStableSymbol(sym)) return false;
+  }
+
+  // For pools with DeFiLlama's stablecoin flag
+  if (p?.stablecoin === true) {
+    // Additional check: ensure no unknown tokens mixed in
+    // Allow if at least one recognized stablecoin is present
+    const hasStable = parts.some((sym) => isStableSymbol(sym));
+    return hasStable;
+  }
+
+  // For pools without the stablecoin flag, require ALL tokens to be stablecoins
   for (const sym of parts) {
     if (!isStableSymbol(sym)) return false;
   }
