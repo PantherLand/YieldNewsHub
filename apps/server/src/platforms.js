@@ -87,6 +87,7 @@ export const PLATFORM_META = {
 };
 
 // Chain metadata for displaying chain info and logos (using DefiLlama CDN)
+// Keys should match DeFiLlama API chain names (case-sensitive)
 export const CHAIN_META = {
   Ethereum: {
     name: 'Ethereum',
@@ -126,9 +127,51 @@ export const CHAIN_META = {
   },
   BSC: {
     name: 'BNB Chain',
-    logoKey: 'bnb',
+    logoKey: 'bsc',
     logoUrl: 'https://icons.llama.fi/chains/rsz_bsc.jpg',
     color: '#F0B90B',
+  },
+  Gnosis: {
+    name: 'Gnosis',
+    logoKey: 'gnosis',
+    logoUrl: 'https://icons.llama.fi/chains/rsz_gnosis.jpg',
+    color: '#04795B',
+  },
+  Fantom: {
+    name: 'Fantom',
+    logoKey: 'fantom',
+    logoUrl: 'https://icons.llama.fi/chains/rsz_fantom.jpg',
+    color: '#1969FF',
+  },
+  Linea: {
+    name: 'Linea',
+    logoKey: 'linea',
+    logoUrl: 'https://icons.llama.fi/chains/rsz_linea.jpg',
+    color: '#61DFFF',
+  },
+  Scroll: {
+    name: 'Scroll',
+    logoKey: 'scroll',
+    logoUrl: 'https://icons.llama.fi/chains/rsz_scroll.jpg',
+    color: '#FFEEDA',
+  },
+  'zkSync Era': {
+    name: 'zkSync Era',
+    logoKey: 'zksync',
+    logoUrl: 'https://icons.llama.fi/chains/rsz_zksync-era.jpg',
+    color: '#8C8DFC',
+  },
+  Mantle: {
+    name: 'Mantle',
+    logoKey: 'mantle',
+    logoUrl: 'https://icons.llama.fi/chains/rsz_mantle.jpg',
+    color: '#000000',
+  },
+  Blast: {
+    name: 'Blast',
+    logoKey: 'blast',
+    logoUrl: 'https://icons.llama.fi/chains/rsz_blast.jpg',
+    color: '#FCFC03',
   },
 };
 
@@ -155,5 +198,25 @@ export function normalizePlatformKey(provider = '') {
 }
 
 export function getChainMeta(chain = '') {
-  return CHAIN_META[chain] || null;
+  if (!chain) return null;
+
+  // Try exact match first
+  if (CHAIN_META[chain]) return CHAIN_META[chain];
+
+  // Try case-insensitive match
+  const chainLower = String(chain).toLowerCase();
+  for (const [key, meta] of Object.entries(CHAIN_META)) {
+    if (key.toLowerCase() === chainLower) {
+      return meta;
+    }
+  }
+
+  // Return a default meta with the chain logo URL if no match found
+  // This helps display unknown chains with some basic styling
+  return {
+    name: chain,
+    logoKey: chainLower.replace(/[^a-z0-9]/g, ''),
+    logoUrl: `https://icons.llama.fi/chains/rsz_${chainLower.replace(/[^a-z0-9]/g, '')}.jpg`,
+    color: null,
+  };
 }

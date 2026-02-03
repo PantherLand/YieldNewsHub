@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { LOGOS, CHAIN_LOGOS, CHAIN_COLORS } from './logos.js';
+import { LOGOS, CHAIN_LOGOS, CHAIN_COLORS, getChainLogo, getChainColor } from './logos.js';
 import CexLinks from './CexLinks.jsx';
 import { WalletConnectButton } from '../wallet/WalletConnectButton.jsx';
 import { LanguageToggle } from './LanguageToggle.jsx';
@@ -197,7 +197,7 @@ const styles = {
     minHeight: '100vh',
     background: theme.colors.gradientDark,
     color: theme.colors.textPrimary,
-    padding: theme.spacing.lg,
+    padding: theme.spacing.md,
     position: 'relative',
     overflow: 'hidden',
   },
@@ -424,7 +424,7 @@ function fmtUsd(x) {
   return `$${v.toFixed(2)}`;
 }
 
-// APY Table Component with Cyberpunk styling
+// APY Table Component with Cyberpunk styling - Mobile Responsive
 function ApyTable({ data }) {
   const { t } = useLanguage();
   const [hoveredRow, setHoveredRow] = useState(null);
@@ -454,6 +454,40 @@ function ApyTable({ data }) {
       cursor: 'default',
       borderLeft: isHovered ? `3px solid ${theme.colors.cyberPurple}` : '3px solid transparent',
     }),
+    // Mobile card layout
+    mobileCard: (isHovered) => ({
+      padding: '16px',
+      borderBottom: `1px solid ${theme.colors.border}`,
+      background: isHovered
+        ? `linear-gradient(135deg, ${theme.colors.bgCardHover} 0%, rgba(168, 85, 247, 0.05) 100%)`
+        : 'transparent',
+      transition: theme.transition.fast,
+      borderLeft: isHovered ? `3px solid ${theme.colors.cyberPurple}` : '3px solid transparent',
+    }),
+    mobileCardHeader: {
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+      marginBottom: '12px',
+      gap: '12px',
+    },
+    mobileCardBody: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(3, 1fr)',
+      gap: '12px',
+      marginBottom: '12px',
+    },
+    mobileCardStat: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '4px',
+    },
+    mobileCardLabel: {
+      fontSize: '10px',
+      color: theme.colors.textMuted,
+      textTransform: 'uppercase',
+      letterSpacing: '0.5px',
+    },
     provider: {
       fontWeight: 600,
       color: theme.colors.textPrimary,
@@ -495,16 +529,242 @@ function ApyTable({ data }) {
     },
   };
 
+  // Check if mobile using window width (will be handled by CSS media queries for initial render)
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Render logo component
+  const renderLogo = (row) => {
+    const logoSrc = (row.logoKey && LOGOS[row.logoKey]) || row.logoUrl;
+    if (logoSrc) {
+      return (
+        <img
+          src={logoSrc}
+          alt={row.platformName || row.provider}
+          width={32}
+          height={32}
+          style={{
+            borderRadius: theme.radius.sm,
+            border: `1px solid ${theme.colors.border}`,
+            background: theme.colors.bgInput,
+            flexShrink: 0,
+          }}
+          onError={(e) => {
+            e.target.style.display = 'none';
+          }}
+        />
+      );
+    }
+    return (
+      <div style={{
+        width: 32,
+        height: 32,
+        borderRadius: theme.radius.sm,
+        background: theme.colors.gradientPrimary,
+        opacity: 0.5,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: '12px',
+        fontWeight: 700,
+        color: '#fff',
+        flexShrink: 0,
+      }}>
+        {(row.platformName || row.provider || '?').charAt(0).toUpperCase()}
+      </div>
+    );
+  };
+
+  // Mobile card render
+  const renderMobileCard = (row, idx) => {
+    const chainColor = getChainColor(row.chain) || row.chainColor || null;
+    const chainLogoSrc = row.chainLogoUrl || getChainLogo(row.chain) || (row.chainLogoKey && CHAIN_LOGOS[row.chainLogoKey?.toLowerCase()]);
+
+    return (
+      <div
+        key={row.id}
+        style={tableStyles.mobileCard(hoveredRow === idx)}
+        onTouchStart={() => setHoveredRow(idx)}
+        onTouchEnd={() => setHoveredRow(null)}
+      >
+        {/* Header: Protocol + APY */}
+        <div style={tableStyles.mobileCardHeader}>
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flex: 1, minWidth: 0 }}>
+            {renderLogo(row)}
+            <div style={{ minWidth: 0 }}>
+              <div style={{ ...tableStyles.provider, fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {row.platformName || row.provider}
+              </div>
+              <div style={tableStyles.chainBadge(chainColor)}>
+                {chainLogoSrc && (
+                  <img
+                    src={chainLogoSrc}
+                    alt={row.chainName || row.chain}
+                    width={12}
+                    height={12}
+                    style={{ borderRadius: '50%' }}
+                    onError={(e) => { e.target.style.display = 'none'; }}
+                  />
+                )}
+                {row.chainName || row.chain || '...'}
+              </div>
+            </div>
+          </div>
+          <div style={{ ...tableStyles.apy, fontSize: '18px', whiteSpace: 'nowrap' }}>
+            {row.apy == null ? '...' : `${Number(row.apy).toFixed(2)}%`}
+          </div>
+        </div>
+
+        {/* Body: Stats */}
+        <div style={tableStyles.mobileCardBody}>
+          <div style={tableStyles.mobileCardStat}>
+            <span style={tableStyles.mobileCardLabel}>Asset</span>
+            <span style={tableStyles.symbol}>{row.symbol}</span>
+          </div>
+          <div style={tableStyles.mobileCardStat}>
+            <span style={tableStyles.mobileCardLabel}>TVL</span>
+            <span style={tableStyles.tvl}>{fmtUsd(row.tvlUsd)}</span>
+          </div>
+          <div style={tableStyles.mobileCardStat}>
+            <span style={tableStyles.mobileCardLabel}>APY</span>
+            <span style={{ ...tableStyles.apy, fontSize: '14px' }}>
+              {row.apy == null ? '...' : `${Number(row.apy).toFixed(2)}%`}
+            </span>
+          </div>
+        </div>
+
+        {/* Action */}
+        <a
+          href={row.platformUrl || row.url || '#'}
+          target="_blank"
+          rel="noreferrer"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '6px',
+            padding: '12px 16px',
+            borderRadius: theme.radius.md,
+            background: theme.colors.gradientPrimary,
+            color: '#fff',
+            textDecoration: 'none',
+            fontSize: '13px',
+            fontWeight: 600,
+            transition: theme.transition.fast,
+            width: '100%',
+          }}
+        >
+          Deposit
+          <span style={{ fontSize: '12px' }}>&rarr;</span>
+        </a>
+      </div>
+    );
+  };
+
+  // Desktop row render
+  const renderDesktopRow = (row, idx) => {
+    const chainColor = getChainColor(row.chain) || row.chainColor || null;
+    const chainLogoSrc = row.chainLogoUrl || getChainLogo(row.chain) || (row.chainLogoKey && CHAIN_LOGOS[row.chainLogoKey?.toLowerCase()]);
+
+    return (
+      <div
+        key={row.id}
+        style={tableStyles.row(hoveredRow === idx)}
+        onMouseEnter={() => setHoveredRow(idx)}
+        onMouseLeave={() => setHoveredRow(null)}
+      >
+        {/* Protocol */}
+        <div style={{ display: 'flex', gap: theme.spacing.md, alignItems: 'center' }}>
+          {renderLogo(row)}
+          <div>
+            <div style={tableStyles.provider}>
+              {row.platformName || row.provider}
+            </div>
+          </div>
+        </div>
+
+        {/* Chain */}
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <div style={tableStyles.chainBadge(chainColor)}>
+            {chainLogoSrc && (
+              <img
+                src={chainLogoSrc}
+                alt={row.chainName || row.chain}
+                width={12}
+                height={12}
+                style={{ borderRadius: '50%' }}
+                onError={(e) => { e.target.style.display = 'none'; }}
+              />
+            )}
+            {row.chainName || row.chain || '...'}
+          </div>
+        </div>
+
+        {/* Asset */}
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <div style={tableStyles.symbol}>{row.symbol}</div>
+        </div>
+
+        {/* APY */}
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <div style={tableStyles.apy}>
+            {row.apy == null ? '...' : `${Number(row.apy).toFixed(2)}%`}
+          </div>
+        </div>
+
+        {/* TVL */}
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <div style={tableStyles.tvl}>{fmtUsd(row.tvlUsd)}</div>
+        </div>
+
+        {/* Action */}
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <a
+            href={row.platformUrl || row.url || '#'}
+            target="_blank"
+            rel="noreferrer"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '8px 14px',
+              borderRadius: theme.radius.md,
+              background: theme.colors.gradientPrimary,
+              color: '#fff',
+              textDecoration: 'none',
+              fontSize: '12px',
+              fontWeight: 600,
+              transition: theme.transition.fast,
+              boxShadow: hoveredRow === idx ? theme.colors.glowPurple : 'none',
+            }}
+          >
+            Deposit
+            <span style={{ fontSize: '10px' }}>&rarr;</span>
+          </a>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div style={styles.card}>
-      <div style={tableStyles.header}>
-        <div>{t('tableProtocol')}</div>
-        <div>{t('tableChain')}</div>
-        <div>{t('tableAsset')}</div>
-        <div>{t('tableApy')}</div>
-        <div>{t('tableTvl')}</div>
-        <div>{t('tableAction')}</div>
-      </div>
+      {/* Desktop header - hidden on mobile */}
+      {!isMobile && (
+        <div style={tableStyles.header} className="desktop-only">
+          <div>{t('tableProtocol')}</div>
+          <div>{t('tableChain')}</div>
+          <div>{t('tableAsset')}</div>
+          <div>{t('tableApy')}</div>
+          <div>{t('tableTvl')}</div>
+          <div>{t('tableAction')}</div>
+        </div>
+      )}
       {data.length === 0 ? (
         <div style={{
           padding: theme.spacing.xl,
@@ -516,123 +776,7 @@ function ApyTable({ data }) {
           {t('noData')}
         </div>
       ) : (
-        data.map((row, idx) => {
-          const chainColor = CHAIN_COLORS[row.chain] || null;
-          const logoSrc = (row.logoKey && LOGOS[row.logoKey]) || row.logoUrl;
-          const chainLogoSrc = row.chainLogoUrl || (row.chainLogoKey && CHAIN_LOGOS[row.chainLogoKey?.toLowerCase()]);
-
-          return (
-            <div
-              key={row.id}
-              style={tableStyles.row(hoveredRow === idx)}
-              onMouseEnter={() => setHoveredRow(idx)}
-              onMouseLeave={() => setHoveredRow(null)}
-            >
-              {/* Protocol */}
-              <div style={{ display: 'flex', gap: theme.spacing.md, alignItems: 'center' }}>
-                {logoSrc ? (
-                  <img
-                    src={logoSrc}
-                    alt={row.platformName || row.provider}
-                    width={32}
-                    height={32}
-                    style={{
-                      borderRadius: theme.radius.sm,
-                      border: `1px solid ${theme.colors.border}`,
-                      background: theme.colors.bgInput,
-                    }}
-                    onError={(e) => {
-                      e.target.style.display = 'none';
-                    }}
-                  />
-                ) : (
-                  <div style={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: theme.radius.sm,
-                    background: theme.colors.gradientPrimary,
-                    opacity: 0.5,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '12px',
-                    fontWeight: 700,
-                    color: '#fff',
-                  }}>
-                    {(row.platformName || row.provider || '?').charAt(0).toUpperCase()}
-                  </div>
-                )}
-                <div>
-                  <div style={tableStyles.provider}>
-                    {row.platformName || row.provider}
-                  </div>
-                </div>
-              </div>
-
-              {/* Chain */}
-              <div style={{ display: 'flex', alignItems: 'center' }}>
-                <div style={tableStyles.chainBadge(chainColor)}>
-                  {chainLogoSrc && (
-                    <img
-                      src={chainLogoSrc}
-                      alt={row.chainName || row.chain}
-                      width={12}
-                      height={12}
-                      style={{ borderRadius: '50%' }}
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                      }}
-                    />
-                  )}
-                  {row.chainName || row.chain || '...'}
-                </div>
-              </div>
-
-              {/* Asset */}
-              <div style={{ display: 'flex', alignItems: 'center' }}>
-                <div style={tableStyles.symbol}>{row.symbol}</div>
-              </div>
-
-              {/* APY */}
-              <div style={{ display: 'flex', alignItems: 'center' }}>
-                <div style={tableStyles.apy}>
-                  {row.apy == null ? '...' : `${Number(row.apy).toFixed(2)}%`}
-                </div>
-              </div>
-
-              {/* TVL */}
-              <div style={{ display: 'flex', alignItems: 'center' }}>
-                <div style={tableStyles.tvl}>{fmtUsd(row.tvlUsd)}</div>
-              </div>
-
-              {/* Action */}
-              <div style={{ display: 'flex', alignItems: 'center' }}>
-                <a
-                  href={row.platformUrl || row.url || '#'}
-                  target="_blank"
-                  rel="noreferrer"
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    padding: '8px 14px',
-                    borderRadius: theme.radius.md,
-                    background: theme.colors.gradientPrimary,
-                    color: '#fff',
-                    textDecoration: 'none',
-                    fontSize: '12px',
-                    fontWeight: 600,
-                    transition: theme.transition.fast,
-                    boxShadow: hoveredRow === idx ? theme.colors.glowPurple : 'none',
-                  }}
-                >
-                  {t('deposit')}
-                  <span style={{ fontSize: '10px' }}>&rarr;</span>
-                </a>
-              </div>
-            </div>
-          );
-        })
+        data.map((row, idx) => isMobile ? renderMobileCard(row, idx) : renderDesktopRow(row, idx))
       )}
     </div>
   );
@@ -893,7 +1037,7 @@ function Settings({ apiBase }) {
     },
     grid: {
       display: 'grid',
-      gridTemplateColumns: '1fr 1fr',
+      gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
       gap: theme.spacing.lg,
     },
     inputGroup: {
@@ -1152,9 +1296,9 @@ function StatsBar({ apyCount, newsCount }) {
   ];
 
   return (
-    <div style={statsStyles.container}>
+    <div style={statsStyles.container} className="stats-container">
       {stats.map((stat, idx) => (
-        <div key={idx} style={statsStyles.card(stat.accent)}>
+        <div key={idx} style={statsStyles.card(stat.accent)} className="stat-card">
           <div style={statsStyles.iconBox(stat.gradient, stat.glow)}>
             {stat.icon}
           </div>
@@ -1281,55 +1425,61 @@ function App() {
       <div style={styles.scanlines} />
 
       <div style={styles.content}>
-        {/* Header */}
-        <div style={styles.header}>
-          <div style={styles.logo}>
-            <div style={styles.logoIcon}>
+        {/* Header - Mobile Responsive */}
+        <div style={styles.header} className="app-header">
+          <div style={styles.logo} className="app-logo">
+            <div style={styles.logoIcon} className="logo-icon">
               <LogoIcon size={52} />
             </div>
-            <div>
-              <h1 style={styles.title}>{t('title')}</h1>
-              <div style={styles.subtitle}>{t('subtitle')}</div>
+            <div className="logo-text">
+              <h1 style={styles.title} className="app-title">{t('title')}</h1>
+              <div style={styles.subtitle} className="app-subtitle">{t('subtitle')}</div>
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: theme.spacing.md }}>
-            <div style={styles.nav}>
+          <div className="header-actions" style={{ display: 'flex', alignItems: 'center', gap: theme.spacing.md, flexWrap: 'wrap' }}>
+            <div style={styles.nav} className="nav-tabs">
               {tabs.map(tabItem => (
                 <button
                   key={tabItem.id}
                   onClick={() => setTab(tabItem.id)}
                   style={styles.navButton(tab === tabItem.id)}
+                  className="nav-button"
                 >
-                  <span style={{
+                  <span className="nav-icon" style={{
                     marginRight: '6px',
                     opacity: 0.7,
                     fontFamily: theme.fonts.mono,
                   }}>{tabItem.icon}</span>
-                  {tabItem.name}
+                  <span className="nav-text">{tabItem.name}</span>
                 </button>
               ))}
             </div>
 
-            <button
-              onClick={refreshData}
-              disabled={loading}
-              style={{
-                ...styles.refreshButton,
-                opacity: loading ? 0.6 : 1,
-                borderColor: loading ? theme.colors.borderCyan : theme.colors.border,
-              }}
-            >
-              <span style={{
-                display: 'inline-block',
-                animation: loading ? 'spin 1s linear infinite' : 'none',
-                fontFamily: theme.fonts.mono,
-              }}>@</span>
-              {loading ? t('syncing') : t('refresh')}
-            </button>
+            <div className="header-buttons" style={{ display: 'flex', gap: theme.spacing.sm, alignItems: 'center' }}>
+              <button
+                onClick={refreshData}
+                disabled={loading}
+                className="refresh-button"
+                style={{
+                  ...styles.refreshButton,
+                  opacity: loading ? 0.6 : 1,
+                  borderColor: loading ? theme.colors.borderCyan : theme.colors.border,
+                }}
+              >
+                <span style={{
+                  display: 'inline-block',
+                  animation: loading ? 'spin 1s linear infinite' : 'none',
+                  fontFamily: theme.fonts.mono,
+                }}>@</span>
+                <span className="refresh-text">{loading ? t('syncing') : t('refresh')}</span>
+              </button>
 
-            <LanguageToggle />
-            <WalletConnectButton />
+              <LanguageToggle />
+              <div className="wallet-button">
+                <WalletConnectButton />
+              </div>
+            </div>
           </div>
         </div>
 
@@ -1345,7 +1495,7 @@ function App() {
         {tab === 'apy' && (
           <div style={{ display: 'grid', gap: theme.spacing.lg }}>
             {/* Filter Bar */}
-            <div style={{
+            <div className="filter-bar" style={{
               display: 'flex',
               gap: theme.spacing.lg,
               flexWrap: 'wrap',
@@ -1504,8 +1654,8 @@ function App() {
         {tab === 'settings' && <Settings apiBase={API_BASE} />}
 
         {/* Footer */}
-        <div style={styles.footer}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: theme.spacing.sm }}>
+        <div style={styles.footer} className="app-footer">
+          <div style={{ display: 'flex', alignItems: 'center', gap: theme.spacing.sm, flexWrap: 'wrap', justifyContent: 'center' }}>
             <span style={{
               color: theme.colors.neonGreen,
               textShadow: `0 0 10px ${theme.colors.neonGreen}`,
@@ -1520,9 +1670,10 @@ function App() {
               border: `1px solid ${theme.colors.border}`,
               color: theme.colors.electricCyanLight,
               fontSize: '11px',
+              wordBreak: 'break-all',
             }}>{API_BASE}</code>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: theme.spacing.md }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: theme.spacing.md, flexWrap: 'wrap', justifyContent: 'center' }}>
             <span style={{ fontFamily: theme.fonts.mono }}>// Built for DeFi</span>
             <span style={styles.badge('pink')}>v1.0</span>
           </div>
@@ -1599,6 +1750,147 @@ function App() {
         input[type="number"]::-webkit-inner-spin-button,
         input[type="number"]::-webkit-outer-spin-button {
           opacity: 1;
+        }
+
+        /* ==================== MOBILE RESPONSIVE STYLES ==================== */
+
+        /* Tablet and below (< 1024px) */
+        @media (max-width: 1024px) {
+          .app-header {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 16px !important;
+          }
+
+          .header-actions {
+            width: 100% !important;
+            justify-content: space-between !important;
+          }
+        }
+
+        /* Mobile (< 768px) */
+        @media (max-width: 768px) {
+          .app-header {
+            padding: 0 !important;
+          }
+
+          .app-logo {
+            gap: 12px !important;
+          }
+
+          .logo-icon {
+            width: 40px !important;
+            height: 40px !important;
+          }
+
+          .logo-icon svg {
+            width: 40px !important;
+            height: 40px !important;
+          }
+
+          .app-title {
+            font-size: 20px !important;
+          }
+
+          .app-subtitle {
+            font-size: 11px !important;
+            display: none;
+          }
+
+          .header-actions {
+            flex-direction: column !important;
+            width: 100% !important;
+            gap: 12px !important;
+          }
+
+          .nav-tabs {
+            width: 100% !important;
+            display: grid !important;
+            grid-template-columns: repeat(4, 1fr) !important;
+            padding: 4px !important;
+          }
+
+          .nav-button {
+            padding: 8px 4px !important;
+            font-size: 11px !important;
+            justify-content: center !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            gap: 2px !important;
+          }
+
+          .nav-icon {
+            margin-right: 0 !important;
+            font-size: 14px !important;
+          }
+
+          .nav-text {
+            font-size: 10px !important;
+          }
+
+          .header-buttons {
+            width: 100% !important;
+            display: flex !important;
+            gap: 8px !important;
+          }
+
+          .refresh-button {
+            flex: 1 !important;
+            justify-content: center !important;
+          }
+
+          .wallet-button {
+            flex: 1 !important;
+          }
+
+          .wallet-button > div,
+          .wallet-button button {
+            width: 100% !important;
+            justify-content: center !important;
+          }
+
+          /* Stats bar */
+          .stats-container {
+            grid-template-columns: 1fr !important;
+          }
+
+          /* Filter bar on mobile */
+          .filter-bar {
+            flex-direction: column !important;
+            gap: 12px !important;
+          }
+
+          /* Footer on mobile */
+          .app-footer {
+            flex-direction: column !important;
+            gap: 12px !important;
+            text-align: center !important;
+          }
+        }
+
+        /* Small mobile (< 480px) */
+        @media (max-width: 480px) {
+          .app-title {
+            font-size: 18px !important;
+          }
+
+          .nav-tabs {
+            grid-template-columns: repeat(2, 1fr) !important;
+          }
+
+          .nav-button {
+            padding: 10px 8px !important;
+          }
+
+          .refresh-text {
+            display: none;
+          }
+
+          .refresh-button {
+            padding: 10px 14px !important;
+            min-width: auto !important;
+          }
         }
       `}</style>
     </div>
