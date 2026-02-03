@@ -66,40 +66,60 @@ function llamaPoolUrl(poolId) {
   return poolId ? `https://defillama.com/yields/pool/${poolId}` : null;
 }
 
+function cefiUrl(exchange, asset) {
+  // Best-effort deep links (may change by region/product). We keep them stable and non-brittle.
+  const a = String(asset).toUpperCase();
+  if (exchange === 'binance') {
+    // Binance Simple Earn landing; often supports asset filter via query.
+    return `https://www.binance.com/en/earn?asset=${encodeURIComponent(a)}`;
+  }
+  if (exchange === 'okx') {
+    // OKX Earn landing (fallback: user searches asset inside the page)
+    return `https://www.okx.com/earn`;
+  }
+  if (exchange === 'bybit') {
+    // Bybit Earn landing
+    return `https://www.bybit.com/en/earn/`;
+  }
+  return null;
+}
+
+const CEFI_ASSETS = ['USDT', 'USDC', 'DAI', 'FDUSD', 'PYUSD', 'FRAX', 'USDE', 'USDY', 'USDS'];
+
 const CEFI_OPPORTUNITIES = [
-  {
-    externalId: 'binance:earn:stable',
+  ...CEFI_ASSETS.map((asset) => ({
+    externalId: `binance:earn:${asset.toLowerCase()}`,
     provider: 'Binance Earn',
     chain: 'CeFi',
-    symbol: 'USDT/USDC',
+    symbol: asset,
     apy: null,
     tvlUsd: null,
-    url: 'https://www.binance.com/en/earn',
-    riskNote: 'CeFi (custody risk). APY integration pending; click through to view current rates.',
+    url: cefiUrl('binance', asset),
+    riskNote: `CeFi (custody risk). Click through to deposit/earn with ${asset}.`,
     source: 'cefi',
-  },
-  {
-    externalId: 'okx:earn:stable',
+  })),
+  ...CEFI_ASSETS.map((asset) => ({
+    externalId: `okx:earn:${asset.toLowerCase()}`,
     provider: 'OKX Earn',
     chain: 'CeFi',
-    symbol: 'USDT/USDC',
+    symbol: asset,
     apy: null,
     tvlUsd: null,
-    url: 'https://www.okx.com/earn',
-    riskNote: 'CeFi (custody risk). APY integration pending; click through to view current rates.',
+    url: cefiUrl('okx', asset),
+    riskNote: `CeFi (custody risk). Click through to deposit/earn with ${asset}.`,
     source: 'cefi',
-  },
-  {
-    externalId: 'bybit:earn:stable',
+  })),
+  ...CEFI_ASSETS.map((asset) => ({
+    externalId: `bybit:earn:${asset.toLowerCase()}`,
     provider: 'Bybit Earn',
     chain: 'CeFi',
-    symbol: 'USDT/USDC',
+    symbol: asset,
     apy: null,
     tvlUsd: null,
-    url: 'https://www.bybit.com/en/earn/',
-    riskNote: 'CeFi (custody risk). APY integration pending; click through to view current rates.',
+    url: cefiUrl('bybit', asset),
+    riskNote: `CeFi (custody risk). Click through to deposit/earn with ${asset}.`,
     source: 'cefi',
-  },
+  })),
 ];
 
 function riskNoteFromPool(p) {
