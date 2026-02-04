@@ -57,6 +57,21 @@ const CHAIN_MARKET_URLS = {
   },
 };
 
+// Optional manual overrides for specific pool ids (highest precision).
+// Example:
+//   '57f95d9e-...' : 'https://app.protocol.xyz/deposit?market=usdc'
+const POOL_LINK_OVERRIDES = {};
+
+function isHttpUrl(value) {
+  const v = String(value || '').trim();
+  return v.startsWith('https://') || v.startsWith('http://');
+}
+
+function isDefiLlamaPoolUrl(value) {
+  const v = String(value || '').trim().toLowerCase();
+  return v.includes('defillama.com/yields/pool/');
+}
+
 export function officialDepositUrl(project, { chain, symbol } = {}) {
   const key = String(project || '').toLowerCase();
 
@@ -70,4 +85,25 @@ export function officialDepositUrl(project, { chain, symbol } = {}) {
   if (!base) return null;
 
   return base;
+}
+
+export function defillamaPoolUrl(poolId) {
+  return poolId ? `https://defillama.com/yields/pool/${poolId}` : null;
+}
+
+export function getBestDepositUrl({ poolId, project, chain, symbol, adapterUrl } = {}) {
+  const override = poolId ? POOL_LINK_OVERRIDES[String(poolId)] : null;
+  if (isHttpUrl(override)) return override;
+
+  // Adapter URL is often the most precise, unless it's just a DeFiLlama fallback.
+  if (isHttpUrl(adapterUrl) && !isDefiLlamaPoolUrl(adapterUrl)) {
+    return adapterUrl;
+  }
+
+  const official = officialDepositUrl(project, { chain, symbol });
+  if (isHttpUrl(official)) return official;
+
+  if (isHttpUrl(adapterUrl)) return adapterUrl;
+
+  return defillamaPoolUrl(poolId);
 }

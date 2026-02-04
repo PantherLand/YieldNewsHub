@@ -95,6 +95,7 @@ app.get('/api/news', asyncHandler(async (req, res) => {
 }));
 
 import { PLATFORM_META, normalizePlatformKey, getChainMeta } from './platforms.js';
+import { getBestDepositUrl } from './defiLinks.js';
 import { getCexLinks } from './cexLinks.js';
 
 /**
@@ -275,7 +276,13 @@ app.get('/api/apy', asyncHandler(async (req, res) => {
       platformName: meta?.name || formatProviderName(it.provider),
       logoKey: meta?.logoKey || null,
       logoUrl: meta?.logoUrl || null,
-      platformUrl: it.url || meta?.homeUrl || null,
+      platformUrl: getBestDepositUrl({
+        poolId: it.externalId,
+        project: it.provider,
+        chain: it.chain,
+        symbol: it.symbol,
+        adapterUrl: it.url,
+      }) || meta?.homeUrl || null,
       // Chain metadata
       chainName: chainMeta?.name || it.chain || null,
       chainLogoKey: chainMeta?.logoKey || null,

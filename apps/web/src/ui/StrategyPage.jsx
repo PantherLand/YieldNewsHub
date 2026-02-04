@@ -52,7 +52,11 @@ function compareValues(a, b) {
 
 function renderScoreStars(score) {
   const normalized = Math.max(0, Math.min(100, Number(score) || 0));
-  const full = Math.round(normalized / 20);
+  let full = 1;
+  if (normalized >= 88) full = 5;
+  else if (normalized >= 74) full = 4;
+  else if (normalized >= 60) full = 3;
+  else if (normalized >= 45) full = 2;
   const empty = Math.max(0, 5 - full);
   return `${'★'.repeat(full)}${'☆'.repeat(empty)}`;
 }
@@ -301,9 +305,6 @@ export default function StrategyPage({ groups, loading, t }) {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                     <span style={{ color: '#fbbf24', fontSize: 13, letterSpacing: '1px' }}>
                       {renderScoreStars(getDisplayScore(row))}
-                    </span>
-                    <span style={{ color: theme.colors.cyan, fontSize: 11, fontWeight: 700 }}>
-                      {getDisplayScore(row).toFixed(1)}/100
                     </span>
                   </div>
                 </div>

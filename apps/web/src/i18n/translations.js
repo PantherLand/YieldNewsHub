@@ -60,6 +60,7 @@ export const translations = {
     // CEX Links
     cexTitle: 'CEX Savings & Earn Products',
     cexDescription: 'CEX is links-only for now (no API integration). Recommendations are direct stablecoin deposits only: USDC / USDT / USDE / DAI.',
+    cexBuildingSoon: 'Building on the way...',
     cexViewRates: 'View Rates',
     cexAssets: 'assets',
     cexRiskNote: 'Risk note: CEX products involve custody/credit risk. Always verify product type (flexible/locked) and terms on the exchange.',
@@ -157,6 +158,7 @@ export const translations = {
     // CEX Links
     cexTitle: 'CEX \u7406\u8d22\u4ea7\u54c1',
     cexDescription: 'CEX \u76ee\u524d\u4ec5\u63d0\u4f9b\u94fe\u63a5\uff08\u65e0 API \u96c6\u6210\uff09\uff0c\u63a8\u8350\u4ec5\u9650\u76f4\u63a5\u7a33\u5b9a\u5e01\u5b58\u5165\uff1aUSDC / USDT / USDE / DAI\u3002',
+    cexBuildingSoon: '\u529f\u80fd\u5efa\u8bbe\u4e2d...',
     cexViewRates: '\u67e5\u770b\u5229\u7387',
     cexAssets: '\u4e2a\u8d44\u4ea7',
     cexRiskNote: '\u98ce\u9669\u63d0\u793a\uff1aCEX \u4ea7\u54c1\u6d89\u53ca\u6258\u7ba1/\u4fe1\u7528\u98ce\u9669\u3002\u8bf7\u59cb\u7ec8\u5728\u4ea4\u6613\u6240\u9a8c\u8bc1\u4ea7\u54c1\u7c7b\u578b\uff08\u6d3b\u671f/\u5b9a\u671f\uff09\u548c\u6761\u6b3e\u3002',

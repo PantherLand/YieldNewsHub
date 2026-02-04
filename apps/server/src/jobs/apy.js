@@ -1,6 +1,6 @@
 import fetch from 'node-fetch';
 import { prisma } from '../db.js';
-import { officialDepositUrl } from '../defiLinks.js';
+import { getBestDepositUrl } from '../defiLinks.js';
 import { analyzeSymbol } from '../apy-intelligence.js';
 
 // APY aggregation:
@@ -34,11 +34,6 @@ function isStableOnlyPool(p) {
   }
 
   return true;
-}
-
-function llamaPoolUrl(poolId) {
-  // DeFiLlama yields pool page
-  return poolId ? `https://defillama.com/yields/pool/${poolId}` : null;
 }
 
 // CeFi links are handled separately (see src/cexLinks.js)
@@ -99,7 +94,13 @@ export async function pollApyOnce() {
 
     for (const p of filtered) {
       const externalId = p.pool;
-      const url = officialDepositUrl(p.project, { chain: p.chain, symbol: p.symbol }) || llamaPoolUrl(p.pool);
+      const url = getBestDepositUrl({
+        poolId: p.pool,
+        project: p.project,
+        chain: p.chain,
+        symbol: p.symbol,
+        adapterUrl: p.url,
+      });
       await prisma.apyOpportunity.upsert({
         where: { externalId },
         update: {

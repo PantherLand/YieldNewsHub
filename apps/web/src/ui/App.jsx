@@ -579,6 +579,19 @@ function ApyTable({ data, apySortDirection = 'desc', onToggleApySort }) {
   const { t } = useLanguage();
   const [hoveredRow, setHoveredRow] = useState(null);
 
+  const getProtocolName = (row) => {
+    if (row?.platformName) return row.platformName;
+    const provider = String(row?.provider || '').trim();
+    if (!provider) return 'protocol';
+    return provider
+      .split('-')
+      .filter(Boolean)
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(' ');
+  };
+
+  const getActionText = (row) => `Link to ${getProtocolName(row)}`;
+
   const tableStyles = {
     header: {
       display: 'grid',
@@ -759,7 +772,7 @@ function ApyTable({ data, apySortDirection = 'desc', onToggleApySort }) {
             width: '100%',
           }}
         >
-          Deposit
+          {getActionText(row)}
           <span style={{ fontSize: '12px' }}>&rarr;</span>
         </a>
       </div>
@@ -834,7 +847,7 @@ function ApyTable({ data, apySortDirection = 'desc', onToggleApySort }) {
               boxShadow: hoveredRow === idx ? theme.colors.glowPurple : 'none',
             }}
           >
-            Deposit
+            {getActionText(row)}
             <span style={{ fontSize: '10px' }}>&rarr;</span>
           </a>
         </div>
@@ -1885,11 +1898,30 @@ function App() {
                 <span style={{ color: theme.colors.electricCyanLight, fontWeight: 600 }}>{filteredApy.length}</span> pools
               </div>
             </div>
-            <ApyTable
-              data={filteredApy}
-              apySortDirection={apySortDirection}
-              onToggleApySort={toggleApySort}
-            />
+            {apyFilter === 'cex' ? (
+              <div
+                style={{
+                  ...styles.card,
+                  padding: theme.spacing.xl,
+                  textAlign: 'center',
+                  background: theme.colors.gradientCard,
+                }}
+              >
+                <div style={{ fontSize: '24px', marginBottom: theme.spacing.sm }}>🏗</div>
+                <div style={{ color: theme.colors.electricCyanLight, fontSize: '16px', fontWeight: 700, marginBottom: 6 }}>
+                  {t('cexBuildingSoon')}
+                </div>
+                <div style={{ color: theme.colors.textMuted, fontSize: '12px' }}>
+                  {t('cexDescription')}
+                </div>
+              </div>
+            ) : (
+              <ApyTable
+                data={filteredApy}
+                apySortDirection={apySortDirection}
+                onToggleApySort={toggleApySort}
+              />
+            )}
           </div>
         )}
         {tab === 'strategy' && <StrategyPage groups={strategies} loading={strategiesLoading} t={t} />}
