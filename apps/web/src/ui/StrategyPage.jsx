@@ -107,6 +107,13 @@ function resolveStrategyDescription(strategy, t) {
   return key ? t(key) : (strategy?.description || '');
 }
 
+function resolveRowUrl(row) {
+  const candidate = row?.platformUrl || row?.url || '';
+  if (typeof candidate !== 'string') return null;
+  const normalized = candidate.trim();
+  return normalized ? normalized : null;
+}
+
 export default function StrategyPage({ groups, loading, t }) {
   const orderedGroups = useMemo(() => {
     const map = new Map((groups || []).map((group) => [group.strategy?.id, group]));
@@ -292,67 +299,86 @@ export default function StrategyPage({ groups, loading, t }) {
                 <div>{renderSortableHeader('score', t('strategyColScore'))}</div>
               </div>
 
-              {activeItems.map((row, idx) => (
-                <div
-                  key={`${activeGroup.strategy?.id}-${row.pool || row.symbol}-${row.__rank}`}
-                  className="strategy-row"
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: '56px 1.8fr 1fr 1fr 1fr 0.9fr',
-                    gap: 8,
-                    alignItems: 'center',
-                    padding: '10px 12px',
-                    borderRadius: theme.radius.md,
-                    border: `1px solid ${theme.colors.border}`,
-                    background: theme.colors.bgCardHover,
-                  }}
-                >
-                  <div style={{ color: theme.colors.purple, fontSize: 12, fontWeight: 700 }}>#{idx + 1}</div>
+              {activeItems.map((row, idx) => {
+                const rowUrl = resolveRowUrl(row);
+                const clickable = Boolean(rowUrl);
+                const openLink = () => {
+                  if (!rowUrl || typeof window === 'undefined') return;
+                  window.open(rowUrl, '_blank', 'noopener,noreferrer');
+                };
 
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ color: theme.colors.textPrimary, fontWeight: 700, fontSize: 13, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {row.project || '-'} • {row.symbol || '-'}
+                return (
+                  <div
+                    key={`${activeGroup.strategy?.id}-${row.pool || row.symbol}-${row.__rank}`}
+                    className={`strategy-row${clickable ? ' strategy-row-clickable' : ''}`}
+                    onClick={clickable ? openLink : undefined}
+                    onKeyDown={clickable ? (event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        openLink();
+                      }
+                    } : undefined}
+                    role={clickable ? 'link' : undefined}
+                    tabIndex={clickable ? 0 : undefined}
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: '56px 1.8fr 1fr 1fr 1fr 0.9fr',
+                      gap: 8,
+                      alignItems: 'center',
+                      padding: '10px 12px',
+                      borderRadius: theme.radius.md,
+                      border: `1px solid ${theme.colors.border}`,
+                      background: theme.colors.bgCardHover,
+                      cursor: clickable ? 'pointer' : 'default',
+                    }}
+                  >
+                    <div style={{ color: theme.colors.purple, fontSize: 12, fontWeight: 700 }}>#{idx + 1}</div>
+
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ color: theme.colors.textPrimary, fontWeight: 700, fontSize: 13, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {row.project || '-'} • {row.symbol || '-'}
+                      </div>
+                      <div style={{ display: 'flex', gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
+                        {row.trustedProtocol && (
+                          <span
+                            style={{
+                              borderRadius: theme.radius.full,
+                              border: `1px solid #00ff8840`,
+                              color: theme.colors.green,
+                              padding: '1px 8px',
+                              fontSize: 10,
+                              fontWeight: 700,
+                            }}
+                          >
+                            {t('strategyTrusted')}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <div style={{ display: 'flex', gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
-                      {row.trustedProtocol && (
-                        <span
-                          style={{
-                            borderRadius: theme.radius.full,
-                            border: `1px solid #00ff8840`,
-                            color: theme.colors.green,
-                            padding: '1px 8px',
-                            fontSize: 10,
-                            fontWeight: 700,
-                          }}
-                        >
-                          {t('strategyTrusted')}
-                        </span>
-                      )}
+
+                    <div style={{ color: theme.colors.textMuted, fontSize: 12 }}>{row.chain || '-'}</div>
+
+                    <div>
+                      <div style={{ color: theme.colors.green, fontWeight: 700, fontSize: 13 }}>
+                        {Number(row.apy || 0).toFixed(2)}%
+                      </div>
+                      <div style={{ color: theme.colors.textMuted, fontSize: 11 }}>
+                        B {Number(row.apyBase || 0).toFixed(2)} / R {Number(row.apyReward || 0).toFixed(2)}
+                      </div>
+                    </div>
+
+                    <div style={{ color: theme.colors.textMuted, fontSize: 12 }}>
+                      {fmtUsd(row.tvlUsd)} {tvlHeat(row.tvlUsd)}
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      <span style={{ color: '#fbbf24', fontSize: 13, letterSpacing: '1px' }}>
+                        {renderScoreStars(getDisplayScore(row))}
+                      </span>
                     </div>
                   </div>
-
-                  <div style={{ color: theme.colors.textMuted, fontSize: 12 }}>{row.chain || '-'}</div>
-
-                  <div>
-                    <div style={{ color: theme.colors.green, fontWeight: 700, fontSize: 13 }}>
-                      {Number(row.apy || 0).toFixed(2)}%
-                    </div>
-                    <div style={{ color: theme.colors.textMuted, fontSize: 11 }}>
-                      B {Number(row.apyBase || 0).toFixed(2)} / R {Number(row.apyReward || 0).toFixed(2)}
-                    </div>
-                  </div>
-
-                  <div style={{ color: theme.colors.textMuted, fontSize: 12 }}>
-                    {fmtUsd(row.tvlUsd)} {tvlHeat(row.tvlUsd)}
-                  </div>
-
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    <span style={{ color: '#fbbf24', fontSize: 13, letterSpacing: '1px' }}>
-                      {renderScoreStars(getDisplayScore(row))}
-                    </span>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <div style={{ color: theme.colors.textMuted, fontSize: 12 }}>{t('strategyNoData')}</div>
@@ -365,6 +391,15 @@ export default function StrategyPage({ groups, loading, t }) {
       )}
 
       <style>{`
+        .strategy-row-clickable:hover {
+          border-color: #22d3ee66 !important;
+        }
+
+        .strategy-row-clickable:focus-visible {
+          outline: 2px solid #22d3ee99;
+          outline-offset: 2px;
+        }
+
         @media (max-width: 980px) {
           .strategy-head {
             display: none !important;
