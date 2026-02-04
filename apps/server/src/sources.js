@@ -66,11 +66,17 @@ export const DEFAULT_NEWS_SOURCES = [
 
   // === Chinese News Sources (中文新闻源) ===
   // High-quality Chinese crypto news sources (tested and verified)
+
+  // Note: 律动BlockBeats temporarily disabled due to SSL/proxy issues
+  // Uncomment when network issue is resolved
+  /*
   {
     name: '律动BlockBeats',
     kind: 'RSS',
     url: 'https://api.theblockbeats.news/v2/rss/all',
   },
+  */
+
   {
     name: '區塊客 Blockcast',
     kind: 'RSS',

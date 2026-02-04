@@ -453,7 +453,7 @@ function fmtUsd(x) {
 function tvlHeat(tvlUsd) {
   const v = Number(tvlUsd || 0);
   if (v > 100_000_000) return '🔥🔥';
-  if (v > 50_000_000) return '🔥';
+  if (v > 20_000_000) return '🔥';
   return '';
 }
 
@@ -582,7 +582,14 @@ function ChainLogo({ src, label }) {
 }
 
 // APY Table Component with Cyberpunk styling - Mobile Responsive
-function ApyTable({ data, apySortDirection = 'desc', onToggleApySort }) {
+function ApyTable({
+  data,
+  sortBy = 'apy',
+  apySortDirection = 'desc',
+  tvlSortDirection = 'desc',
+  onToggleApySort,
+  onToggleTvlSort,
+}) {
   const { t } = useLanguage();
   const [hoveredRow, setHoveredRow] = useState(null);
 
@@ -882,7 +889,7 @@ function ApyTable({ data, apySortDirection = 'desc', onToggleApySort }) {
                 border: 'none',
                 background: 'transparent',
                 padding: 0,
-                color: theme.colors.textMuted,
+                color: sortBy === 'apy' ? theme.colors.electricCyanLight : theme.colors.textMuted,
                 fontSize: '11px',
                 fontWeight: 700,
                 textTransform: 'uppercase',
@@ -897,7 +904,29 @@ function ApyTable({ data, apySortDirection = 'desc', onToggleApySort }) {
               <span>{apySortDirection === 'asc' ? '↑' : '↓'}</span>
             </button>
           </div>
-          <div>{t('tableTvl')}</div>
+          <div>
+            <button
+              type="button"
+              onClick={() => onToggleTvlSort && onToggleTvlSort()}
+              style={{
+                border: 'none',
+                background: 'transparent',
+                padding: 0,
+                color: sortBy === 'tvl' ? theme.colors.electricCyanLight : theme.colors.textMuted,
+                fontSize: '11px',
+                fontWeight: 700,
+                textTransform: 'uppercase',
+                letterSpacing: '1px',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+              }}
+            >
+              <span>{t('tableTvl')}</span>
+              <span>{tvlSortDirection === 'asc' ? '↑' : '↓'}</span>
+            </button>
+          </div>
           <div>{t('tableAction')}</div>
         </div>
       )}
@@ -916,6 +945,35 @@ function ApyTable({ data, apySortDirection = 'desc', onToggleApySort }) {
       )}
     </div>
   );
+}
+
+// Format news time to local timezone with better formatting
+function formatNewsTime(dateString) {
+  if (!dateString) return '...';
+
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now - date;
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  // Relative time for recent news
+  if (diffMins < 1) return '刚刚';
+  if (diffMins < 60) return `${diffMins}分钟前`;
+  if (diffHours < 24) return `${diffHours}小时前`;
+  if (diffDays < 7) return `${diffDays}天前`;
+
+  // Absolute time for older news (local timezone)
+  const options = {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  };
+  return date.toLocaleString('zh-CN', options);
 }
 
 // News Card Component with Cyberpunk styling
@@ -1029,7 +1087,7 @@ function NewsCard({ item }) {
       <div style={cardStyles.meta}>
         <span style={cardStyles.source}>{item.source?.name || t('newsUnknownSource')}</span>
         <span style={{ color: theme.colors.cyberPurple }}>|</span>
-        <span>{item.publishedAt ? new Date(item.publishedAt).toLocaleString() : '...'}</span>
+        <span>{formatNewsTime(item.publishedAt)}</span>
       </div>
       {item.summary && <div style={cardStyles.summary}>{item.summary}</div>}
       {item.tags?.length > 0 && (
@@ -1502,7 +1560,9 @@ function App() {
   // TVL and APY filters
   const [minTvl, setMinTvl] = useState(1); // in millions
   const [minApy, setMinApy] = useState(3); // in percentage
+  const [sortBy, setSortBy] = useState('apy');
   const [apySortDirection, setApySortDirection] = useState('desc');
+  const [tvlSortDirection, setTvlSortDirection] = useState('desc');
   // Chain filter
   const [selectedChain, setSelectedChain] = useState('all');
 
@@ -1655,17 +1715,36 @@ function App() {
     }
 
     const sorted = [...result].sort((a, b) => {
-      const av = Number(a.apy ?? -Infinity);
-      const bv = Number(b.apy ?? -Infinity);
-      if (av !== bv) return apySortDirection === 'asc' ? av - bv : bv - av;
-      return (b.tvlUsd ?? 0) - (a.tvlUsd ?? 0);
+      if (sortBy === 'tvl') {
+        const at = Number(a.tvlUsd ?? -Infinity);
+        const bt = Number(b.tvlUsd ?? -Infinity);
+        if (at !== bt) return tvlSortDirection === 'asc' ? at - bt : bt - at;
+        return Number(b.apy ?? -Infinity) - Number(a.apy ?? -Infinity);
+      }
+
+      const aa = Number(a.apy ?? -Infinity);
+      const ba = Number(b.apy ?? -Infinity);
+      if (aa !== ba) return apySortDirection === 'asc' ? aa - ba : ba - aa;
+      return Number(b.tvlUsd ?? -Infinity) - Number(a.tvlUsd ?? -Infinity);
     });
 
     return sorted;
-  }, [apy, apyFilter, selectedChain, minTvl, minApy, apySortDirection]);
+  }, [apy, apyFilter, selectedChain, minTvl, minApy, sortBy, apySortDirection, tvlSortDirection]);
 
   function toggleApySort() {
+    if (sortBy !== 'apy') {
+      setSortBy('apy');
+      return;
+    }
     setApySortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+  }
+
+  function toggleTvlSort() {
+    if (sortBy !== 'tvl') {
+      setSortBy('tvl');
+      return;
+    }
+    setTvlSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
   }
 
   useEffect(() => {
@@ -1916,8 +1995,11 @@ function App() {
             ) : (
               <ApyTable
                 data={filteredApy}
+                sortBy={sortBy}
                 apySortDirection={apySortDirection}
+                tvlSortDirection={tvlSortDirection}
                 onToggleApySort={toggleApySort}
+                onToggleTvlSort={toggleTvlSort}
               />
             )}
           </div>

@@ -24,6 +24,13 @@ function fmtUsd(x) {
   return `$${v.toFixed(0)}`;
 }
 
+function tvlHeat(tvlUsd) {
+  const v = Number(tvlUsd || 0);
+  if (v > 100_000_000) return '🔥🔥';
+  if (v > 50_000_000) return '🔥';
+  return '';
+}
+
 const STRATEGY_ORDER = [
   'base-apy-priority',
   'conservative-core',
@@ -300,7 +307,9 @@ export default function StrategyPage({ groups, loading, t }) {
                     </div>
                   </div>
 
-                  <div style={{ color: theme.colors.textMuted, fontSize: 12 }}>{fmtUsd(row.tvlUsd)}</div>
+                  <div style={{ color: theme.colors.textMuted, fontSize: 12 }}>
+                    {fmtUsd(row.tvlUsd)} {tvlHeat(row.tvlUsd)}
+                  </div>
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                     <span style={{ color: '#fbbf24', fontSize: 13, letterSpacing: '1px' }}>
