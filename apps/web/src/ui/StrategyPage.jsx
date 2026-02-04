@@ -217,7 +217,7 @@ export default function StrategyPage({ groups, loading, t }) {
                 fontWeight: 700,
               }}
             >
-              {activeGroup.items?.length || 0} pools
+              {activeGroup.items?.length || 0} {t('poolsUnit')}
             </span>
             <div style={{ marginLeft: 'auto', color: theme.colors.textMuted, fontSize: 11 }}>
               {t('strategyUpdated')}: {activeGroup.generatedAt ? new Date(activeGroup.generatedAt).toLocaleString() : '-'}

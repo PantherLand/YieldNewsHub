@@ -27,6 +27,9 @@ export const translations = {
     filterAllChains: 'All Chains',
     filterAsset: 'Asset:',
     filterAllAssets: 'All Assets',
+    filterMinTvl: 'Min TVL:',
+    filterMinApy: 'Min APY:',
+    poolsUnit: 'pools',
 
     // Table headers
     tableProtocol: 'Protocol',
@@ -56,11 +59,15 @@ export const translations = {
     newsShowMore: 'Show More',
     newsUpdatesReady: 'New updates available',
     newsLoadUpdates: 'Load updates',
+    newsMinScoreLabel: 'Min Score:',
+    newsMinScoreHint: '1 = all | 10 = critical only',
+    newsUnknownSource: 'Unknown',
+    newsEnglishOriginal: 'News content is shown in original English',
 
     // CEX Links
     cexTitle: 'CEX Savings & Earn Products',
     cexDescription: 'CEX is links-only for now (no API integration). Recommendations are direct stablecoin deposits only: USDC / USDT / USDE / DAI.',
-    cexBuildingSoon: 'Building on the way...',
+    cexBuildingSoon: 'Building in progress...',
     cexViewRates: 'View Rates',
     cexAssets: 'assets',
     cexRiskNote: 'Risk note: CEX products involve custody/credit risk. Always verify product type (flexible/locked) and terms on the exchange.',
@@ -73,6 +80,8 @@ export const translations = {
     strategyColScore: 'Score',
     strategyTrusted: 'Trusted',
     strategySortBy: 'Sort by',
+    actionLinkTo: 'Link to',
+    genericProtocol: 'protocol',
 
     // Settings
     settingsTitle: 'Settings',
@@ -125,6 +134,9 @@ export const translations = {
     filterAllChains: '\u6240\u6709\u94fe',
     filterAsset: '\u8d44\u4ea7:',
     filterAllAssets: '\u6240\u6709\u8d44\u4ea7',
+    filterMinTvl: '\u6700\u4f4e TVL:',
+    filterMinApy: '\u6700\u4f4e APY:',
+    poolsUnit: '\u4e2a\u6c60\u5b50',
 
     // Table headers
     tableProtocol: '\u534f\u8bae',
@@ -154,6 +166,10 @@ export const translations = {
     newsShowMore: '\u67e5\u770b\u66f4\u591a',
     newsUpdatesReady: '\u53d1\u73b0\u65b0\u5185\u5bb9',
     newsLoadUpdates: '\u70b9\u51fb\u52a0\u8f7d',
+    newsMinScoreLabel: '\u6700\u4f4e\u5206\u6570:',
+    newsMinScoreHint: '1 = \u5168\u90e8 | 10 = \u4ec5\u5173\u952e',
+    newsUnknownSource: '\u672a\u77e5\u6765\u6e90',
+    newsEnglishOriginal: '\u65b0\u95fb\u5185\u5bb9\u4fdd\u6301\u82f1\u6587\u539f\u6587',
 
     // CEX Links
     cexTitle: 'CEX \u7406\u8d22\u4ea7\u54c1',
@@ -171,6 +187,8 @@ export const translations = {
     strategyColScore: '\u7b56\u7565\u5206',
     strategyTrusted: '\u4fe1\u4efb\u534f\u8bae',
     strategySortBy: '\u6392\u5e8f\u65b9\u5f0f',
+    actionLinkTo: '\u524d\u5f80',
+    genericProtocol: '\u534f\u8bae',
 
     // Settings
     settingsTitle: '\u8bbe\u7f6e',

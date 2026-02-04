@@ -450,6 +450,13 @@ function fmtUsd(x) {
   return `$${v.toFixed(2)}`;
 }
 
+function tvlHeat(tvlUsd) {
+  const v = Number(tvlUsd || 0);
+  if (v > 100_000_000) return '🔥🔥';
+  if (v > 50_000_000) return '🔥';
+  return '';
+}
+
 function buildNewsSignature(items = []) {
   return (items || [])
     .slice(0, 20)
@@ -582,7 +589,7 @@ function ApyTable({ data, apySortDirection = 'desc', onToggleApySort }) {
   const getProtocolName = (row) => {
     if (row?.platformName) return row.platformName;
     const provider = String(row?.provider || '').trim();
-    if (!provider) return 'protocol';
+    if (!provider) return t('genericProtocol');
     return provider
       .split('-')
       .filter(Boolean)
@@ -590,7 +597,7 @@ function ApyTable({ data, apySortDirection = 'desc', onToggleApySort }) {
       .join(' ');
   };
 
-  const getActionText = (row) => `Link to ${getProtocolName(row)}`;
+  const getActionText = (row) => `${t('actionLinkTo')} ${getProtocolName(row)}`;
 
   const tableStyles = {
     header: {
@@ -741,7 +748,9 @@ function ApyTable({ data, apySortDirection = 'desc', onToggleApySort }) {
           </div>
           <div style={tableStyles.mobileCardStat}>
             <span style={tableStyles.mobileCardLabel}>TVL</span>
-            <span style={tableStyles.tvl}>{fmtUsd(row.tvlUsd)}</span>
+            <span style={tableStyles.tvl}>
+              {fmtUsd(row.tvlUsd)} {tvlHeat(row.tvlUsd)}
+            </span>
           </div>
           <div style={tableStyles.mobileCardStat}>
             <span style={tableStyles.mobileCardLabel}>APY</span>
@@ -823,7 +832,9 @@ function ApyTable({ data, apySortDirection = 'desc', onToggleApySort }) {
 
         {/* TVL */}
         <div style={{ display: 'flex', alignItems: 'center' }}>
-          <div style={tableStyles.tvl}>{fmtUsd(row.tvlUsd)}</div>
+          <div style={tableStyles.tvl}>
+            {fmtUsd(row.tvlUsd)} {tvlHeat(row.tvlUsd)}
+          </div>
         </div>
 
         {/* Action */}
@@ -909,6 +920,7 @@ function ApyTable({ data, apySortDirection = 'desc', onToggleApySort }) {
 
 // News Card Component with Cyberpunk styling
 function NewsCard({ item }) {
+  const { t } = useLanguage();
   const [isHovered, setIsHovered] = useState(false);
 
   const getScoreColor = (score) => {
@@ -1015,7 +1027,7 @@ function NewsCard({ item }) {
         </div>
       </div>
       <div style={cardStyles.meta}>
-        <span style={cardStyles.source}>{item.source?.name || 'Unknown'}</span>
+        <span style={cardStyles.source}>{item.source?.name || t('newsUnknownSource')}</span>
         <span style={{ color: theme.colors.cyberPurple }}>|</span>
         <span>{item.publishedAt ? new Date(item.publishedAt).toLocaleString() : '...'}</span>
       </div>
@@ -1109,7 +1121,7 @@ function NewsList({ data, minScore, setMinScore, hasPendingUpdate, pendingCount,
         </div>
       )}
       <div style={filterStyles.container}>
-        <span style={filterStyles.label}>Min Score:</span>
+        <span style={filterStyles.label}>{t('newsMinScoreLabel')}</span>
         <input
           type="number"
           value={minScore}
@@ -1118,21 +1130,7 @@ function NewsList({ data, minScore, setMinScore, hasPendingUpdate, pendingCount,
           min={1}
           max={10}
         />
-        <span style={filterStyles.hint}>1 = all | 10 = critical only</span>
-        {language === 'zh' && (
-          <div style={{
-            marginLeft: 'auto',
-            padding: '6px 12px',
-            background: 'rgba(255, 136, 0, 0.1)',
-            border: '1px solid rgba(255, 136, 0, 0.3)',
-            borderRadius: theme.radius.md,
-            color: theme.colors.neonOrange,
-            fontSize: '11px',
-            fontWeight: 600,
-          }}>
-            📰 新闻内容为英文原文
-          </div>
-        )}
+        <span style={filterStyles.hint}>{t('newsMinScoreHint')}</span>
       </div>
       <div style={filterStyles.grid}>
         {data.length === 0 ? (
@@ -1145,7 +1143,7 @@ function NewsList({ data, minScore, setMinScore, hasPendingUpdate, pendingCount,
             border: `1px solid ${theme.colors.border}`,
           }}>
             <div style={{ fontSize: '24px', marginBottom: theme.spacing.sm }}>...</div>
-            No news matching criteria
+            {t('newsNoResults')}
           </div>
         ) : (
           data.map(item => <NewsCard key={item.id} item={item} />)
@@ -1486,7 +1484,7 @@ function StatsBar({ apyCount, newsCount }) {
 
 // Main App Component
 function App() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [tab, setTab] = useState(() => {
     if (typeof window === 'undefined') return 'apy';
     return getTabFromPath(window.location.pathname);
@@ -1545,14 +1543,14 @@ function App() {
     setApy(j.data?.items || j.items || []);
   }
 
-  async function fetchNewsData(score = minScore) {
-    const r = await fetch(`${API_BASE}/api/news?limit=80&minScore=${score}`);
+  async function fetchNewsData(score = minScore, lang = language) {
+    const r = await fetch(`${API_BASE}/api/news?limit=80&minScore=${score}&language=${lang}`);
     const j = await r.json();
     return j.data?.items || j.items || [];
   }
 
   async function loadNews() {
-    const items = await fetchNewsData(minScore);
+    const items = await fetchNewsData(minScore, language);
     setNews(items);
     setPendingNews([]);
     setHasPendingNewsUpdate(false);
@@ -1567,7 +1565,7 @@ function App() {
   }
 
   async function checkNewsUpdates() {
-    const latest = await fetchNewsData(minScore);
+    const latest = await fetchNewsData(minScore, language);
     if (!news.length) {
       setNews(latest);
       return;
@@ -1674,7 +1672,7 @@ function App() {
     if (tab === 'news') loadNews().catch(() => {});
     if (tab === 'strategy' && strategies.length === 0) loadStrategies().catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [minScore, tab]);
+  }, [minScore, tab, language]);
 
   useEffect(() => {
     if (tab !== 'news') return undefined;
@@ -1827,7 +1825,7 @@ function App() {
                   fontWeight: 600,
                   textTransform: 'uppercase',
                   letterSpacing: '1px',
-                }}>Min TVL:</span>
+                }}>{t('filterMinTvl')}</span>
                 <input
                   type="number"
                   value={minTvl}
@@ -1862,7 +1860,7 @@ function App() {
                   fontWeight: 600,
                   textTransform: 'uppercase',
                   letterSpacing: '1px',
-                }}>Min APY:</span>
+                }}>{t('filterMinApy')}</span>
                 <input
                   type="number"
                   value={minApy}
@@ -1895,7 +1893,7 @@ function App() {
                 color: theme.colors.textMuted,
                 fontSize: '12px',
               }}>
-                <span style={{ color: theme.colors.electricCyanLight, fontWeight: 600 }}>{filteredApy.length}</span> pools
+                <span style={{ color: theme.colors.electricCyanLight, fontWeight: 600 }}>{filteredApy.length}</span> {t('poolsUnit')}
               </div>
             </div>
             {apyFilter === 'cex' ? (

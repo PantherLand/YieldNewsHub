@@ -44,6 +44,7 @@ app.get('/healthz', (_req, res) => res.json({ success: true, data: { ok: true } 
  *   - source (filter by source name, comma-separated)
  *   - tags (filter by tags, comma-separated)
  *   - q (search in title)
+ *   - language (filter by language: "en", "zh", or "all" - default: "all")
  */
 app.get('/api/news', asyncHandler(async (req, res) => {
   const { limit, offset } = parsePagination(req.query);
@@ -54,7 +55,24 @@ app.get('/api/news', asyncHandler(async (req, res) => {
     score: { gte: minScore },
   };
 
-  // Source filter
+  // Language filter - define Chinese and English sources
+  const CHINESE_SOURCES = ['律动BlockBeats', '區塊客 Blockcast', '金色财经快讯'];
+  const language = req.query.language?.toLowerCase() || 'all';
+
+  if (language === 'zh') {
+    // Chinese only - filter to Chinese sources
+    where.source = {
+      name: { in: CHINESE_SOURCES },
+    };
+  } else if (language === 'en') {
+    // English only - exclude Chinese sources
+    where.source = {
+      name: { notIn: CHINESE_SOURCES },
+    };
+  }
+  // If language === 'all' or not specified, show all sources
+
+  // Source filter (can override language filter if explicitly specified)
   const sourceFilter = parseStringFilter(req.query.source);
   if (sourceFilter) {
     where.source = {
@@ -532,11 +550,20 @@ app.use(errorHandler);
 
 // --- bootstrap
 async function ensureSeedData() {
-  // News sources
-  const existing = await prisma.newsSource.count();
-  if (existing === 0) {
-    await prisma.newsSource.createMany({ data: DEFAULT_NEWS_SOURCES });
+  // News sources - sync to add new sources while keeping existing ones
+  console.log('[bootstrap] Syncing news sources...');
+  const existingSources = await prisma.newsSource.findMany();
+  const existingNames = new Set(existingSources.map(s => s.name));
+
+  for (const source of DEFAULT_NEWS_SOURCES) {
+    if (!existingNames.has(source.name)) {
+      await prisma.newsSource.create({ data: source });
+      console.log(`[bootstrap] + Added news source: ${source.name}`);
+    }
   }
+
+  const totalSources = await prisma.newsSource.count();
+  console.log(`[bootstrap] ✓ ${totalSources} news sources ready`);
 
   // APY sources
   const apyExisting = await prisma.apySource.count();

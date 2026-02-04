@@ -65,23 +65,25 @@ export const DEFAULT_NEWS_SOURCES = [
   },
 
   // === Chinese News Sources (中文新闻源) ===
-  // Note: These sources provide Chinese language crypto news
-  // Uncomment if you want to add Chinese news support
+  // High-quality Chinese crypto news sources (tested and verified)
+  {
+    name: '律动BlockBeats',
+    kind: 'RSS',
+    url: 'https://api.theblockbeats.news/v2/rss/all',
+  },
+  {
+    name: '區塊客 Blockcast',
+    kind: 'RSS',
+    url: 'https://blockcast.it/feed/',
+  },
+
+  // Note: 金色财经 requires self-hosted RSSHub instance
+  // Uncomment if you have deployed your own RSSHub
   /*
   {
-    name: '金色财经 (Golden Finance)',
+    name: '金色财经快讯',
     kind: 'RSS',
-    url: 'https://www.jinse.com/lives/rss',
-  },
-  {
-    name: 'PANews',
-    kind: 'RSS',
-    url: 'https://www.panewslab.com/rss/index.xml',
-  },
-  {
-    name: 'BlockBeats (律动)',
-    kind: 'RSS',
-    url: 'https://www.theblockbeats.info/rss/index.xml',
+    url: 'https://your-rsshub-domain.com/jinse/lives',
   },
   */
 ];
@@ -157,4 +159,57 @@ export const IMPORTANT_KEYWORDS = [
   'drop',
   'volatility',
   'liquidity crisis',
+
+  // === Chinese Keywords (中文关键词) ===
+  // Crypto basics
+  '比特币',
+  '以太坊',
+  '加密货币',
+  '数字货币',
+  '区块链',
+  '虚拟货币',
+
+  // DeFi & Protocols
+  'defi',
+  '去中心化',
+  '流动性',
+  '质押',
+  '挖矿',
+  '收益',
+  '稳定币',
+
+  // Market & Trading
+  '暴涨',
+  '暴跌',
+  '牛市',
+  '熊市',
+  '减半',
+  '突破',
+  '回调',
+  '爆仓',
+
+  // Regulatory & Compliance
+  '监管',
+  '合规',
+  '央行',
+  '数字人民币',
+  '香港',
+  '新加坡',
+  '政策',
+  '禁令',
+
+  // Risk & Security
+  '黑客',
+  '漏洞',
+  '安全',
+  '被盗',
+  '诈骗',
+  '跑路',
+
+  // Exchanges & Platforms
+  '交易所',
+  '上线',
+  '下架',
+  '提币',
+  '充币',
 ];
