@@ -3,7 +3,7 @@ import { filterDirectStablePools, rankPools, logTvl, chainPenalty } from './comm
 export const rewardBalancedStrategy = {
   id: 'reward-balanced',
   name: 'Reward Balanced',
-  description: '奖励增强型：接受适度激励 APY，但惩罚过度补贴。',
+  description: '奖励增强型：接受适度激励 APY，但惩罚过度补贴。 / Reward-balanced: accepts moderate incentive APY but penalizes excessive subsidies.',
   run(allPools, top) {
     let pools = filterDirectStablePools(allPools, {
       minTvlUsd: 10_000_000,

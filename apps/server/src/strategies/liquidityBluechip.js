@@ -3,7 +3,7 @@ import { filterDirectStablePools, rankPools, logTvl, chainPenalty } from './comm
 export const liquidityBluechipStrategy = {
   id: 'liquidity-bluechip',
   name: 'Liquidity Bluechip',
-  description: '流动性优先：超大 TVL 池优先，收益其次。',
+  description: '流动性优先：超大 TVL 池优先，收益其次。 / Liquidity-first: prioritize very large TVL pools, then yield.',
   run(allPools, top) {
     const pools = filterDirectStablePools(allPools, {
       minTvlUsd: 50_000_000,

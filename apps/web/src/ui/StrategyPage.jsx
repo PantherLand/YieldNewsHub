@@ -39,6 +39,29 @@ const STRATEGY_ORDER = [
   'opportunistic-guarded',
 ];
 
+const STRATEGY_I18N = {
+  'base-apy-priority': {
+    nameKey: 'strategyNameBaseApyPriority',
+    descKey: 'strategyDescBaseApyPriority',
+  },
+  'conservative-core': {
+    nameKey: 'strategyNameConservativeCore',
+    descKey: 'strategyDescConservativeCore',
+  },
+  'liquidity-bluechip': {
+    nameKey: 'strategyNameLiquidityBluechip',
+    descKey: 'strategyDescLiquidityBluechip',
+  },
+  'reward-balanced': {
+    nameKey: 'strategyNameRewardBalanced',
+    descKey: 'strategyDescRewardBalanced',
+  },
+  'opportunistic-guarded': {
+    nameKey: 'strategyNameOpportunisticGuarded',
+    descKey: 'strategyDescOpportunisticGuarded',
+  },
+};
+
 const SORT_DEFAULT_DIRECTION = {
   rank: 'asc',
   pool: 'asc',
@@ -70,6 +93,18 @@ function renderScoreStars(score) {
 
 function getDisplayScore(item) {
   return Number(item?.score ?? item?.scoreNormalized ?? 0);
+}
+
+function resolveStrategyName(strategy, t) {
+  const id = strategy?.id;
+  const key = id ? STRATEGY_I18N[id]?.nameKey : null;
+  return key ? t(key) : (strategy?.name || '-');
+}
+
+function resolveStrategyDescription(strategy, t) {
+  const id = strategy?.id;
+  const key = id ? STRATEGY_I18N[id]?.descKey : null;
+  return key ? t(key) : (strategy?.description || '');
 }
 
 export default function StrategyPage({ groups, loading, t }) {
@@ -194,7 +229,7 @@ export default function StrategyPage({ groups, loading, t }) {
                   cursor: 'pointer',
                 }}
               >
-                {group.strategy?.name || '-'}
+                {resolveStrategyName(group.strategy, t)}
               </button>
             );
           })}
@@ -212,7 +247,7 @@ export default function StrategyPage({ groups, loading, t }) {
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: theme.spacing.md }}>
             <div style={{ fontSize: 18, fontWeight: 800, color: theme.colors.textPrimary }}>
-              {activeGroup.strategy?.name || '-'}
+              {resolveStrategyName(activeGroup.strategy, t)}
             </div>
             <span
               style={{
@@ -232,7 +267,7 @@ export default function StrategyPage({ groups, loading, t }) {
           </div>
 
           <div style={{ color: theme.colors.textMuted, fontSize: 13, marginBottom: theme.spacing.md }}>
-            {activeGroup.strategy?.description || ''}
+            {resolveStrategyDescription(activeGroup.strategy, t)}
           </div>
 
           {activeGroup.items?.length ? (

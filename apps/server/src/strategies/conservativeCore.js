@@ -3,7 +3,7 @@ import { filterDirectStablePools, rankPools, logTvl, chainPenalty } from './comm
 export const conservativeCoreStrategy = {
   id: 'conservative-core',
   name: 'Conservative Core',
-  description: '保守型：高 TVL、低链风险、可信协议优先。',
+  description: '保守型：高 TVL、低链风险、可信协议优先。 / Conservative: favors high TVL, low chain risk, and trusted protocols.',
   run(allPools, top) {
     const pools = filterDirectStablePools(allPools, {
       minTvlUsd: 20_000_000,
