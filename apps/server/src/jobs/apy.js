@@ -1,6 +1,7 @@
 import fetch from 'node-fetch';
 import { prisma } from '../db.js';
 import { officialDepositUrl } from '../defiLinks.js';
+import { analyzeSymbol } from '../apy-intelligence.js';
 
 // APY aggregation:
 // - DeFi: DeFiLlama yields API (no key)
@@ -9,72 +10,11 @@ import { officialDepositUrl } from '../defiLinks.js';
 // DeFiLlama yields API:
 // https://yields.llama.fi/pools
 
-// 主流稳定币白名单 - USD 挂钩稳定币
-const STABLE_SYMBOLS = new Set([
-  // 主流稳定币
-  'USDC', 'USDT', 'DAI', 'USDE', 'USDS',
-  'FRAX', 'TUSD', 'FDUSD', 'PYUSD', 'USD0', 'USDY',
-  'LUSD', 'GUSD', 'BUSD', 'CUSD', 'SUSD', 'EUSD',
-  // DeFi 原生稳定币
-  'GHO', 'CRVUSD', 'MKUSD', 'DOLA', 'FRAXBP',
-  // 收益稳定币变体 (underlying is stablecoin)
-  'SUSDE', 'SDAI', 'SUSDS',
-  // Aave/Compound 代币化稳定币 (underlying is stablecoin)
-  'AUSDC', 'AUSDT', 'ADAI', 'CUSDC', 'CDAI',
-  // 其他审计过的稳定币
-  'USDP', 'USDD', 'USDA', 'USDB', 'USDM',
-  'ALUSD', 'MUSD', 'AGEUR', 'EURT',
-]);
-
-// 非稳定币关键词黑名单 - 用于过滤掉包含这些代币的池子
-const NON_STABLE_KEYWORDS = new Set([
-  // ETH 及其衍生品
-  'ETH', 'WETH', 'STETH', 'WSTETH', 'RETH', 'CBETH', 'FRXETH', 'METH', 'EETH', 'WEETH', 'RSETH', 'EZETH',
-  // BTC 及其衍生品
-  'BTC', 'WBTC', 'TBTC', 'SBTC', 'RENBTC', 'HBTC', 'BTCB', 'CBBTC', 'LBTC',
-  // 治理/协议代币
-  'CRV', 'CVX', 'AAVE', 'COMP', 'UNI', 'SUSHI', 'BAL', 'CAKE', 'JOE',
-  'LINK', 'MKR', 'SNX', 'YFI', 'LDO', 'RPL', 'PENDLE', 'ENA',
-  // L1/L2 原生代币
-  'MATIC', 'POL', 'ARB', 'OP', 'AVAX', 'FTM', 'SOL', 'BNB', 'ATOM', 'DOT',
-  // LP 代币标记
-  'LP', 'SLP', 'BPT', 'UNI-V2', 'UNI-V3',
-  // 其他波动性资产
-  'PEPE', 'SHIB', 'DOGE', 'WLD', 'APT', 'SUI',
-]);
-
-function isStableSymbol(sym = '') {
-  const s = String(sym).toUpperCase();
-  return STABLE_SYMBOLS.has(s);
-}
-
-function isNonStableSymbol(sym = '') {
-  const s = String(sym).toUpperCase();
-  return NON_STABLE_KEYWORDS.has(s);
-}
-
-function parseSymbols(symbol = '') {
-  // Normalize and extract token-like parts.
-  // Examples:
-  // - "USDC" => ["USDC"]
-  // - "USDC-USDT" => ["USDC","USDT"]
-  // - "crvUSD" => ["CRVUSD"]
-  const s = String(symbol || '').toUpperCase();
-  // Replace non-alphanumerics with a delimiter, then split.
-  return s
-    .replace(/[^A-Z0-9]+/g, '-')
-    .split('-')
-    .filter(Boolean);
-}
-
 function isStableOnlyPool(p) {
-  const parts = parseSymbols(p?.symbol || '');
-  if (!parts.length) return false;
-
-  // Reject if any non-stable token is found (ETH, BTC, etc.)
-  for (const sym of parts) {
-    if (isNonStableSymbol(sym)) return false;
-  }
+  const symbol = analyzeSymbol(p?.symbol || '');
+  if (!symbol.tokens.length) return false;
+  if (!symbol.pureDirectStable) return false;
+  if (symbol.hasVolatileToken) return false;
 
   // Additional check: reject pools with suspiciously high APY (>50% usually indicates non-stable or ponzi risk)
   if (typeof p.apy === 'number' && p.apy > 50) {
@@ -93,11 +33,6 @@ function isStableOnlyPool(p) {
     return false;
   }
 
-  // Require ALL tokens in the pool to be recognized stablecoins
-  // This ensures we only show pure stablecoin pools, regardless of DeFiLlama's stablecoin flag
-  for (const sym of parts) {
-    if (!isStableSymbol(sym)) return false;
-  }
   return true;
 }
 
@@ -151,7 +86,8 @@ export async function pollApyOnce() {
     const json = await res.json();
     const pools = json?.data || [];
 
-    // pick stable-only pools with: whitelisted project, TVL >= $1M, APY >= 3%
+    // pick direct stablecoin pools only (USDC/USDT/USDE/DAI)
+    // with: whitelisted project, TVL >= $1M, APY >= 3%
     // sort by apy desc, limit to top 20
     const filtered = pools
       .filter((p) => isAllowedProject(p.project))

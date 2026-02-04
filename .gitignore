@@ -5,3 +5,8 @@ node_modules
 apps/server/dist
 apps/web/dist
 apps/web/.next
+*/**/.agents/*
+*/**/.cursor/*
+*/**/.github/*
+
+yarn.lock

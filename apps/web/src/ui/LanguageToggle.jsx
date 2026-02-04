@@ -61,7 +61,11 @@ export function LanguageToggle() {
       }}
     >
       <GlobeIcon />
-      <span style={{ minWidth: '32px', textAlign: 'center' }}>
+      <span style={{
+        minWidth: '40px',
+        textAlign: 'center',
+        fontFamily: language === 'zh' ? '-apple-system, "PingFang SC", "Microsoft YaHei", sans-serif' : 'inherit',
+      }}>
         {LANGUAGES[language].nativeName}
       </span>
     </button>

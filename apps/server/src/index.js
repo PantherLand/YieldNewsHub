@@ -7,11 +7,12 @@ import { DEFAULT_NEWS_SOURCES } from './sources.js';
 import { pollNewsOnce } from './jobs/news.js';
 import { pollApyOnce } from './jobs/apy.js';
 import { pushTelegram } from './telegram.js';
+import { runStrategyById, refreshAllStrategies } from './strategies/index.js';
+import { cache } from './cache.js';
 import {
   ErrorCode,
   ApiError,
   successResponse,
-  errorResponse,
   parsePagination,
   parseNumericRange,
   parseStringFilter,
@@ -19,6 +20,7 @@ import {
   errorHandler,
   asyncHandler,
 } from './api-utils.js';
+import { analyzeApyOpportunity } from './apy-intelligence.js';
 
 const app = express();
 app.use(express.json({ limit: '1mb' }));
@@ -92,7 +94,7 @@ app.get('/api/news', asyncHandler(async (req, res) => {
   ));
 }));
 
-import { PLATFORM_META, CHAIN_META, normalizePlatformKey, getChainMeta } from './platforms.js';
+import { PLATFORM_META, normalizePlatformKey, getChainMeta } from './platforms.js';
 import { getCexLinks } from './cexLinks.js';
 
 /**
@@ -100,89 +102,162 @@ import { getCexLinks } from './cexLinks.js';
  * Query params:
  *   - limit (default: 50, max: 200)
  *   - offset (default: 0)
- *   - chain (filter by chain, comma-separated, e.g. "Ethereum,Arbitrum")
- *   - provider (filter by provider name, comma-separated)
- *   - symbol (filter by symbol, comma-separated, e.g. "USDC,USDT")
+ *   - chain (filter by chain, comma-separated, case-insensitive)
+ *   - provider (filter by provider, comma-separated, case-insensitive)
+ *   - symbol (filter by symbol, comma-separated, case-insensitive)
  *   - source (filter by source: "defillama", "cefi")
+ *   - q (search in provider/chain/symbol)
  *   - minApy (minimum APY percentage)
  *   - maxApy (maximum APY percentage)
  *   - minTvl (minimum TVL in USD)
- *   - sortBy (field to sort by: "apy", "tvl", "provider" - default: "apy")
+ *   - pureStableOnly (true/false)
+ *   - recommendedOnly (true/false, recommended = direct stable only: USDC/USDT/USDE/DAI)
+ *   - riskLevel (low|medium|high, comma-separated)
+ *   - minQuality (0-100)
+ *   - sortBy (field to sort by: "quality","risk","apy","tvl","provider","updatedAt" - default: "quality")
  *   - sortOrder (sort direction: "asc", "desc" - default: "desc")
  */
 app.get('/api/apy', asyncHandler(async (req, res) => {
   const { limit, offset } = parsePagination(req.query);
+  const and = [];
+
+  const toBoolean = (value, fieldName) => {
+    if (value === undefined || value === null || value === '') return undefined;
+    if (typeof value === 'boolean') return value;
+    if (typeof value === 'string') {
+      const normalized = value.trim().toLowerCase();
+      if (['1', 'true', 'yes'].includes(normalized)) return true;
+      if (['0', 'false', 'no'].includes(normalized)) return false;
+    }
+    throw new ApiError(
+      ErrorCode.INVALID_PARAMETER,
+      `${fieldName} must be true or false`,
+      fieldName
+    );
+  };
 
   // Build where clause
   const where = {};
 
-  // Chain filter
+  // Chain filter (case-insensitive)
   const chainFilter = parseStringFilter(req.query.chain);
   if (chainFilter) {
-    // Handle "CeFi" as a special case (case-insensitive)
-    const normalizedChains = chainFilter.map(c =>
-      c.toLowerCase() === 'cefi' ? 'CeFi' : c
-    );
-    where.chain = { in: normalizedChains };
+    and.push({
+      OR: chainFilter.map((chain) => ({
+        chain: { equals: chain, mode: 'insensitive' },
+      })),
+    });
   }
 
-  // Provider filter
+  // Provider filter (case-insensitive)
   const providerFilter = parseStringFilter(req.query.provider);
   if (providerFilter) {
-    where.provider = { in: providerFilter };
+    and.push({
+      OR: providerFilter.map((provider) => ({
+        provider: { equals: provider, mode: 'insensitive' },
+      })),
+    });
   }
 
-  // Symbol filter
+  // Symbol filter (case-insensitive)
   const symbolFilter = parseStringFilter(req.query.symbol);
   if (symbolFilter) {
-    where.symbol = { in: symbolFilter };
+    and.push({
+      OR: symbolFilter.map((symbol) => ({
+        symbol: { equals: symbol, mode: 'insensitive' },
+      })),
+    });
   }
 
-  // Source filter (defillama or cefi)
+  // Source filter (case-insensitive)
   const sourceFilter = parseStringFilter(req.query.source);
   if (sourceFilter) {
-    where.source = { in: sourceFilter };
+    and.push({
+      OR: sourceFilter.map((source) => ({
+        source: { equals: source, mode: 'insensitive' },
+      })),
+    });
+  }
+
+  // Keyword search
+  if (req.query.q && typeof req.query.q === 'string' && req.query.q.trim()) {
+    const q = req.query.q.trim();
+    and.push({
+      OR: [
+        { provider: { contains: q, mode: 'insensitive' } },
+        { symbol: { contains: q, mode: 'insensitive' } },
+        { chain: { contains: q, mode: 'insensitive' } },
+      ],
+    });
   }
 
   // APY range filter
   const apyRange = parseNumericRange(req.query, 'apy');
   if (apyRange) {
-    where.apy = apyRange;
+    and.push({ apy: apyRange });
   }
 
   // TVL range filter
   const tvlRange = parseNumericRange(req.query, 'tvl');
   if (tvlRange) {
-    where.tvlUsd = tvlRange;
+    and.push({ tvlUsd: tvlRange });
+  }
+
+  if (and.length > 0) {
+    where.AND = and;
+  }
+
+  const pureStableOnly = toBoolean(req.query.pureStableOnly, 'pureStableOnly');
+  const recommendedOnly = toBoolean(req.query.recommendedOnly, 'recommendedOnly');
+  const minQuality = req.query.minQuality === undefined
+    ? undefined
+    : Number(req.query.minQuality);
+  if (minQuality !== undefined && (Number.isNaN(minQuality) || minQuality < 0 || minQuality > 100)) {
+    throw new ApiError(
+      ErrorCode.INVALID_PARAMETER,
+      'minQuality must be a number between 0 and 100',
+      'minQuality'
+    );
+  }
+
+  const riskLevelFilter = parseStringFilter(req.query.riskLevel);
+  let riskLevels;
+  if (riskLevelFilter) {
+    riskLevels = riskLevelFilter.map((x) => x.toLowerCase());
+    const valid = ['low', 'medium', 'high'];
+    const invalid = riskLevels.find((x) => !valid.includes(x));
+    if (invalid) {
+      throw new ApiError(
+        ErrorCode.INVALID_PARAMETER,
+        `invalid riskLevel: ${invalid}. valid values: low,medium,high`,
+        'riskLevel'
+      );
+    }
   }
 
   // Sorting
-  const sortBy = req.query.sortBy || 'apy';
+  const sortBy = req.query.sortBy || 'quality';
   const sortOrder = req.query.sortOrder === 'asc' ? 'asc' : 'desc';
-
-  const orderByMap = {
-    apy: [{ apy: sortOrder }, { tvlUsd: 'desc' }],
-    tvl: [{ tvlUsd: sortOrder }, { apy: 'desc' }],
-    provider: [{ provider: sortOrder }, { apy: 'desc' }],
+  const sortValue = (item) => {
+    if (sortBy === 'quality') return item.qualityScore ?? 0;
+    if (sortBy === 'risk') return item.riskScore ?? 0;
+    if (sortBy === 'apy') return item.apy ?? -Infinity;
+    if (sortBy === 'tvl') return item.tvlUsd ?? -Infinity;
+    if (sortBy === 'provider') return (item.provider || '').toLowerCase();
+    if (sortBy === 'updatedAt') return new Date(item.updatedAt).getTime();
+    return item.qualityScore ?? 0;
   };
-  const orderBy = orderByMap[sortBy] || orderByMap.apy;
 
-  // Get total count for pagination
-  const total = await prisma.apyOpportunity.count({ where });
-
-  // Get items
-  const items = await prisma.apyOpportunity.findMany({
-    where,
-    orderBy,
-    skip: offset,
-    take: limit,
-  });
+  // Fetch candidates first, then apply intelligence filtering/sorting.
+  // Current dataset size is small, so in-memory post-processing keeps query API flexible.
+  const rawItems = await prisma.apyOpportunity.findMany({ where });
 
   // Enrich with platform and chain metadata
-  const enrichedItems = items.map((it) => {
+  let enrichedItems = rawItems.map((it) => {
     const key = normalizePlatformKey(it.provider);
     const meta = key ? PLATFORM_META[key] : null;
     const chainMeta = getChainMeta(it.chain);
+    const intelligence = analyzeApyOpportunity(it);
 
     // Format provider name for display (e.g., "aave-v3" -> "Aave V3")
     const formatProviderName = (provider) => {
@@ -206,14 +281,96 @@ app.get('/api/apy', asyncHandler(async (req, res) => {
       chainLogoKey: chainMeta?.logoKey || null,
       chainLogoUrl: chainMeta?.logoUrl || null,
       chainColor: chainMeta?.color || null,
+      // Intelligence fields for better filtering UX
+      pureStable: intelligence.pureStable,
+      pureDirectStable: intelligence.pureDirectStable,
+      stableRatio: intelligence.stableRatio,
+      directStableRatio: intelligence.directStableRatio,
+      riskScore: intelligence.riskScore,
+      riskLevel: intelligence.riskLevel,
+      qualityScore: intelligence.qualityScore,
+      recommended: intelligence.recommended,
+      tokenParts: intelligence.tokens,
     };
   });
 
+  if (pureStableOnly === true) {
+    enrichedItems = enrichedItems.filter((it) => it.pureStable);
+  }
+
+  if (recommendedOnly === true) {
+    enrichedItems = enrichedItems.filter((it) => it.recommended);
+  }
+
+  if (riskLevels && riskLevels.length > 0) {
+    const set = new Set(riskLevels);
+    enrichedItems = enrichedItems.filter((it) => set.has(String(it.riskLevel || '').toLowerCase()));
+  }
+
+  if (minQuality !== undefined) {
+    enrichedItems = enrichedItems.filter((it) => (it.qualityScore ?? 0) >= minQuality);
+  }
+
+  enrichedItems.sort((a, b) => {
+    const av = sortValue(a);
+    const bv = sortValue(b);
+
+    if (typeof av === 'string' && typeof bv === 'string') {
+      return sortOrder === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
+    }
+
+    const delta = Number(av) - Number(bv);
+    if (delta !== 0) return sortOrder === 'asc' ? delta : -delta;
+
+    // Tiebreakers: lower risk, then higher TVL, then higher APY
+    if ((a.riskScore ?? 0) !== (b.riskScore ?? 0)) return (a.riskScore ?? 0) - (b.riskScore ?? 0);
+    if ((a.tvlUsd ?? 0) !== (b.tvlUsd ?? 0)) return (b.tvlUsd ?? 0) - (a.tvlUsd ?? 0);
+    return (b.apy ?? -Infinity) - (a.apy ?? -Infinity);
+  });
+
+  const total = enrichedItems.length;
+  const pagedItems = enrichedItems.slice(offset, offset + limit);
+
   res.json(successResponse(
-    { items: enrichedItems },
+    { items: pagedItems },
     buildPaginationMeta(total, limit, offset)
   ));
 }));
+
+const STRATEGY_ROUTE_MAP = [
+  ['/api/strategy/base-apy-priority', 'base-apy-priority'],
+  ['/api/strategy/conservative-core', 'conservative-core'],
+  ['/api/strategy/liquidity-bluechip', 'liquidity-bluechip'],
+  ['/api/strategy/reward-balanced', 'reward-balanced'],
+  ['/api/strategy/opportunistic-guarded', 'opportunistic-guarded'],
+];
+
+function parseStrategyTop(queryTop) {
+  if (queryTop === undefined || queryTop === null || queryTop === '') return 10;
+  const top = Number(queryTop);
+  if (!Number.isInteger(top) || top < 1 || top > 30) {
+    throw new ApiError(
+      ErrorCode.INVALID_PARAMETER,
+      'top must be an integer between 1 and 30',
+      'top'
+    );
+  }
+  return top;
+}
+
+for (const [routePath, strategyId] of STRATEGY_ROUTE_MAP) {
+  app.get(routePath, asyncHandler(async (req, res) => {
+    const top = parseStrategyTop(req.query.top);
+    const result = await runStrategyById(strategyId, top);
+    if (!result) {
+      throw new ApiError(ErrorCode.NOT_FOUND, `strategy not found: ${strategyId}`, 'strategyId', 404);
+    }
+    res.json(successResponse({
+      category: 'strategy',
+      ...result,
+    }));
+  }));
+}
 
 /**
  * GET /api/sources
@@ -230,7 +387,74 @@ app.get('/api/sources', asyncHandler(async (_req, res) => {
  * Returns click-through links for CEX earn pages (no APY aggregation).
  */
 app.get('/api/cex-links', asyncHandler(async (_req, res) => {
-  res.json(successResponse({ items: getCexLinks() }));
+  const cacheKey = 'cex:links';
+
+  // Try cache first (1 hour TTL)
+  let links = cache.get(cacheKey);
+  if (!links) {
+    links = getCexLinks();
+    cache.set(cacheKey, links, 60 * 60_000); // 1 hour
+  }
+
+  res.json(successResponse({ items: links }));
+}));
+
+/**
+ * GET /api/cache/stats
+ * Returns cache statistics
+ */
+app.get('/api/cache/stats', asyncHandler(async (_req, res) => {
+  const stats = cache.stats();
+  res.json(successResponse(stats));
+}));
+
+/**
+ * POST /api/cache/clear
+ * Clear all cache (admin only in production)
+ */
+app.post('/api/cache/clear', asyncHandler(async (_req, res) => {
+  cache.clear();
+  res.json(successResponse({ message: 'Cache cleared successfully' }));
+}));
+
+/**
+ * POST /api/cache/refresh
+ * Manually trigger cache refresh
+ */
+app.post('/api/cache/refresh', asyncHandler(async (_req, res) => {
+  const results = await refreshAllStrategies();
+  const succeeded = results.filter(r => r.success).length;
+  const failed = results.filter(r => !r.success).length;
+
+  res.json(successResponse({
+    message: 'Cache refresh completed',
+    succeeded,
+    failed,
+    details: results,
+  }));
+}));
+
+/**
+ * POST /api/jobs/news
+ * Manually trigger news polling
+ */
+app.post('/api/jobs/news', asyncHandler(async (_req, res) => {
+  const result = await pollNewsOnce();
+  res.json(successResponse({
+    message: 'News polling completed',
+    ...result,
+  }));
+}));
+
+/**
+ * POST /api/jobs/apy
+ * Manually trigger APY polling
+ */
+app.post('/api/jobs/apy', asyncHandler(async (_req, res) => {
+  await pollApyOnce();
+  res.json(successResponse({
+    message: 'APY polling completed',
+  }));
 }));
 
 /**
@@ -324,7 +548,9 @@ async function main() {
   // Jobs
   const newsCron = process.env.NEWS_POLL_CRON || '*/5 * * * *';
   const apyCron = process.env.APY_POLL_CRON || '0 * * * *';
+  const cacheCron = process.env.CACHE_REFRESH_CRON || '0 * * * *'; // Every hour
 
+  // News polling job
   cron.schedule(newsCron, async () => {
     await pollNewsOnce({
       pushFn: async ({ title, url, score }) => {
@@ -334,13 +560,39 @@ async function main() {
     });
   });
 
+  // APY data polling job
   cron.schedule(apyCron, async () => {
     await pollApyOnce();
+  });
+
+  // Cache refresh job - runs after APY data is updated
+  cron.schedule(cacheCron, async () => {
+    console.log('[cache] Refreshing strategy caches...');
+    try {
+      const results = await refreshAllStrategies();
+      const succeeded = results.filter(r => r.success).length;
+      const failed = results.filter(r => !r.success).length;
+      console.log(`[cache] Strategy cache refresh completed: ${succeeded} succeeded, ${failed} failed`);
+    } catch (error) {
+      console.error('[cache] Strategy cache refresh failed:', error.message);
+    }
   });
 
   // kick once at boot
   pollNewsOnce().catch(() => {});
   pollApyOnce().catch(() => {});
+
+  // Initial cache warm-up (run after APY data loads)
+  setTimeout(() => {
+    refreshAllStrategies()
+      .then(results => {
+        const succeeded = results.filter(r => r.success).length;
+        console.log(`[cache] Initial cache warm-up completed: ${succeeded} strategies cached`);
+      })
+      .catch(error => {
+        console.error('[cache] Initial cache warm-up failed:', error.message);
+      });
+  }, 5000); // Wait 5 seconds for APY data to load
 
   const port = Number(process.env.PORT || 8787);
   app.listen(port, () => console.log(`YieldNewsHub server listening on :${port}`));

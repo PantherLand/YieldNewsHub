@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { LOGOS } from './logos.js';
 import { useLanguage } from '../i18n/index.js';
 
@@ -31,6 +31,45 @@ export default function CexLinks({ items }) {
     return Array.from(by.entries());
   }, [items]);
 
+  function ExchangeLogo({ logoSrc, keyName }) {
+    const [failed, setFailed] = useState(false);
+
+    useEffect(() => {
+      setFailed(false);
+    }, [logoSrc]);
+
+    if (!logoSrc || failed) {
+      return (
+        <div style={{
+          width: 28,
+          height: 28,
+          borderRadius: theme.radius.md,
+          background: theme.colors.gradientPrimary,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: '12px',
+          fontWeight: 700,
+          color: '#fff',
+          flexShrink: 0,
+        }}>
+          {(keyName || '?').charAt(0).toUpperCase()}
+        </div>
+      );
+    }
+
+    return (
+      <img
+        src={logoSrc}
+        alt={keyName}
+        width={28}
+        height={28}
+        style={{ borderRadius: theme.radius.md, flexShrink: 0 }}
+        onError={() => setFailed(true)}
+      />
+    );
+  }
+
   return (
     <div style={{ display: 'grid', gap: theme.spacing.lg }}>
       <div style={{ color: theme.colors.textMuted, fontSize: 13, lineHeight: 1.5 }}>
@@ -51,32 +90,7 @@ export default function CexLinks({ items }) {
             }}
           >
             <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: theme.spacing.md }}>
-              {LOGOS[key] ? (
-                <img
-                  src={LOGOS[key]}
-                  alt={key}
-                  width={28}
-                  height={28}
-                  style={{ borderRadius: theme.radius.md, flexShrink: 0 }}
-                  onError={(e) => { e.target.style.display = 'none'; }}
-                />
-              ) : (
-                <div style={{
-                  width: 28,
-                  height: 28,
-                  borderRadius: theme.radius.md,
-                  background: theme.colors.gradientPrimary,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '12px',
-                  fontWeight: 700,
-                  color: '#fff',
-                  flexShrink: 0,
-                }}>
-                  {(key || '?').charAt(0).toUpperCase()}
-                </div>
-              )}
+              <ExchangeLogo logoSrc={LOGOS[key]} keyName={key} />
               <div style={{ fontWeight: 800, color: theme.colors.textPrimary, letterSpacing: 0.2, fontSize: 15 }}>
                 {rows[0]?.exchange || key}
               </div>

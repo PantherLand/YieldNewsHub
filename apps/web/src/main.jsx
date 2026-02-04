@@ -15,13 +15,13 @@ const queryClient = new QueryClient();
 createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <LanguageProvider>
-      <WagmiProvider config={config}>
-        <QueryClientProvider client={queryClient}>
+      <QueryClientProvider client={queryClient}>
+        <WagmiProvider config={config}>
           <RainbowKitProvider theme={cyberpunkTheme} modalSize="compact">
             <App />
           </RainbowKitProvider>
-        </QueryClientProvider>
-      </WagmiProvider>
+        </WagmiProvider>
+      </QueryClientProvider>
     </LanguageProvider>
   </React.StrictMode>
 );

@@ -1,4 +1,4 @@
-const CEFI_ASSETS = ['USDT', 'USDC', 'DAI', 'FDUSD', 'PYUSD', 'FRAX', 'USDE', 'USDY', 'USDS'];
+const CEFI_ASSETS = ['USDC', 'USDT', 'USDE', 'DAI'];
 
 function cefiUrl(exchange, asset) {
   const a = String(asset).toUpperCase();

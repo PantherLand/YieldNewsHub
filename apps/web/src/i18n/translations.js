@@ -13,6 +13,7 @@ export const translations = {
 
     // Navigation tabs
     tabYields: 'Yields',
+    tabStrategies: 'Strategies',
     tabCexLinks: 'CEX Links',
     tabNews: 'News',
     tabConfig: 'Config',
@@ -53,13 +54,24 @@ export const translations = {
     newsNoResults: 'No news articles available',
     newsLoadingMore: 'Loading more...',
     newsShowMore: 'Show More',
+    newsUpdatesReady: 'New updates available',
+    newsLoadUpdates: 'Load updates',
 
     // CEX Links
     cexTitle: 'CEX Savings & Earn Products',
-    cexDescription: 'CEX is links-only for now (no API integration). Click to open the exchange Earn page and deposit the selected stablecoin.',
+    cexDescription: 'CEX is links-only for now (no API integration). Recommendations are direct stablecoin deposits only: USDC / USDT / USDE / DAI.',
     cexViewRates: 'View Rates',
     cexAssets: 'assets',
     cexRiskNote: 'Risk note: CEX products involve custody/credit risk. Always verify product type (flexible/locked) and terms on the exchange.',
+    strategyDescription: 'Strategy view: five independent models score direct stablecoin pools (USDC/USDT/USDE/DAI) for different styles.',
+    strategyNoData: 'No strategy results available',
+    strategyUpdated: 'Updated',
+    strategyColRank: 'Rank',
+    strategyColPool: 'Pool',
+    strategyColApy: 'APY (Base/Reward)',
+    strategyColScore: 'Score',
+    strategyTrusted: 'Trusted',
+    strategySortBy: 'Sort by',
 
     // Settings
     settingsTitle: 'Settings',
@@ -98,6 +110,7 @@ export const translations = {
 
     // Navigation tabs
     tabYields: '\u6536\u76ca',
+    tabStrategies: '\u7b56\u7565',
     tabCexLinks: 'CEX \u94fe\u63a5',
     tabNews: '\u65b0\u95fb',
     tabConfig: '\u914d\u7f6e',
@@ -138,13 +151,24 @@ export const translations = {
     newsNoResults: '\u6682\u65e0\u65b0\u95fb',
     newsLoadingMore: '\u52a0\u8f7d\u4e2d...',
     newsShowMore: '\u67e5\u770b\u66f4\u591a',
+    newsUpdatesReady: '\u53d1\u73b0\u65b0\u5185\u5bb9',
+    newsLoadUpdates: '\u70b9\u51fb\u52a0\u8f7d',
 
     // CEX Links
     cexTitle: 'CEX \u7406\u8d22\u4ea7\u54c1',
-    cexDescription: 'CEX \u76ee\u524d\u4ec5\u63d0\u4f9b\u94fe\u63a5\uff08\u65e0 API \u96c6\u6210\uff09\u3002\u70b9\u51fb\u6253\u5f00\u4ea4\u6613\u6240\u7406\u8d22\u9875\u9762\u5e76\u5b58\u5165\u6240\u9009\u7a33\u5b9a\u5e01\u3002',
+    cexDescription: 'CEX \u76ee\u524d\u4ec5\u63d0\u4f9b\u94fe\u63a5\uff08\u65e0 API \u96c6\u6210\uff09\uff0c\u63a8\u8350\u4ec5\u9650\u76f4\u63a5\u7a33\u5b9a\u5e01\u5b58\u5165\uff1aUSDC / USDT / USDE / DAI\u3002',
     cexViewRates: '\u67e5\u770b\u5229\u7387',
     cexAssets: '\u4e2a\u8d44\u4ea7',
     cexRiskNote: '\u98ce\u9669\u63d0\u793a\uff1aCEX \u4ea7\u54c1\u6d89\u53ca\u6258\u7ba1/\u4fe1\u7528\u98ce\u9669\u3002\u8bf7\u59cb\u7ec8\u5728\u4ea4\u6613\u6240\u9a8c\u8bc1\u4ea7\u54c1\u7c7b\u578b\uff08\u6d3b\u671f/\u5b9a\u671f\uff09\u548c\u6761\u6b3e\u3002',
+    strategyDescription: '\u7b56\u7565\u89c6\u56fe\uff1a5 \u79cd\u72ec\u7acb\u6a21\u578b\u5bf9\u76f4\u63a5\u7a33\u5b9a\u5e01\u6c60\uff08USDC/USDT/USDE/DAI\uff09\u6309\u4e0d\u540c\u98ce\u683c\u6253\u5206\u6392\u5e8f\u3002',
+    strategyNoData: '\u6682\u65e0\u7b56\u7565\u7ed3\u679c',
+    strategyUpdated: '\u66f4\u65b0\u65f6\u95f4',
+    strategyColRank: '\u6392\u540d',
+    strategyColPool: '\u6c60\u5b50',
+    strategyColApy: '\u5e74\u5316\uff08\u57fa\u7840/\u5956\u52b1\uff09',
+    strategyColScore: '\u7b56\u7565\u5206',
+    strategyTrusted: '\u4fe1\u4efb\u534f\u8bae',
+    strategySortBy: '\u6392\u5e8f\u65b9\u5f0f',
 
     // Settings
     settingsTitle: '\u8bbe\u7f6e',

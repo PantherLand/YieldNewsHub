@@ -1,11 +1,37 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { LOGOS, CHAIN_LOGOS, CHAIN_COLORS, getChainLogo, getChainColor } from './logos.js';
-import CexLinks from './CexLinks.jsx';
+import StrategyPage from './StrategyPage.jsx';
 import { WalletConnectButton } from '../wallet/WalletConnectButton.jsx';
 import { LanguageToggle } from './LanguageToggle.jsx';
 import { useLanguage } from '../i18n/index.js';
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8787';
+const STRATEGY_ENDPOINTS = [
+  '/api/strategy/base-apy-priority',
+  '/api/strategy/conservative-core',
+  '/api/strategy/liquidity-bluechip',
+  '/api/strategy/reward-balanced',
+  '/api/strategy/opportunistic-guarded',
+];
+const TAB_ROUTE_MAP = {
+  apy: '/apy',
+  strategy: '/strategy',
+  news: '/news',
+  settings: '/settings',
+};
+
+function getTabFromPath(pathname = '') {
+  const normalizedPath = pathname.toLowerCase().replace(/\/+$/, '') || '/';
+  if (normalizedPath === '/strategy' || normalizedPath.startsWith('/strategy/')) return 'strategy';
+  if (normalizedPath === '/news' || normalizedPath.startsWith('/news/')) return 'news';
+  if (normalizedPath === '/settings' || normalizedPath.startsWith('/settings/')) return 'settings';
+  if (normalizedPath === '/apy' || normalizedPath.startsWith('/apy/')) return 'apy';
+  return 'apy';
+}
+
+function getRouteFromTab(tabId) {
+  return TAB_ROUTE_MAP[tabId] || TAB_ROUTE_MAP.apy;
+}
 
 // ============================================
 // YIELDNEWSHUB CYBERPUNK DESIGN SYSTEM
@@ -424,8 +450,132 @@ function fmtUsd(x) {
   return `$${v.toFixed(2)}`;
 }
 
+function buildNewsSignature(items = []) {
+  return (items || [])
+    .slice(0, 20)
+    .map((item) => `${item.id || item.url || ''}|${item.publishedAt || ''}|${item.score || ''}`)
+    .join('||');
+}
+
+function buildProtocolLogoCandidates(row = {}) {
+  const candidates = [];
+  const push = (url) => {
+    if (!url || typeof url !== 'string') return;
+    if (!candidates.includes(url)) candidates.push(url);
+  };
+
+  if (row.logoKey && LOGOS[row.logoKey]) push(LOGOS[row.logoKey]);
+  if (row.logoUrl) push(row.logoUrl);
+
+  const providerRaw = String(row.provider || '').toLowerCase().trim();
+  const platformKey = String(row.platformKey || '').toLowerCase().trim();
+  const slugs = new Set();
+  if (providerRaw) slugs.add(providerRaw.replace(/[^a-z0-9-]/g, ''));
+  if (platformKey) slugs.add(platformKey.replace(/[^a-z0-9-]/g, ''));
+
+  for (const slug of Array.from(slugs)) {
+    if (!slug) continue;
+    push(`https://icons.llama.fi/${slug}.jpg`);
+    push(`https://icons.llama.fi/${slug}.png`);
+    const withoutVersion = slug.replace(/-v\d+$/g, '');
+    if (withoutVersion && withoutVersion !== slug) {
+      push(`https://icons.llama.fi/${withoutVersion}.jpg`);
+      push(`https://icons.llama.fi/${withoutVersion}.png`);
+    }
+  }
+
+  return candidates;
+}
+
+function ProtocolLogo({ row }) {
+  const candidates = useMemo(() => buildProtocolLogoCandidates(row), [row]);
+  const [logoIndex, setLogoIndex] = useState(0);
+
+  useEffect(() => {
+    setLogoIndex(0);
+  }, [candidates.join('|')]);
+
+  if (logoIndex >= candidates.length) {
+    return (
+      <div style={{
+        width: 32,
+        height: 32,
+        borderRadius: theme.radius.sm,
+        background: theme.colors.gradientPrimary,
+        opacity: 0.5,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: '12px',
+        fontWeight: 700,
+        color: '#fff',
+        flexShrink: 0,
+      }}>
+        {(row.platformName || row.provider || '?').charAt(0).toUpperCase()}
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={candidates[logoIndex]}
+      alt={row.platformName || row.provider}
+      width={32}
+      height={32}
+      style={{
+        borderRadius: theme.radius.sm,
+        border: `1px solid ${theme.colors.border}`,
+        background: theme.colors.bgInput,
+        flexShrink: 0,
+      }}
+      onError={() => {
+        setLogoIndex((prev) => (prev + 1 < candidates.length ? prev + 1 : candidates.length));
+      }}
+    />
+  );
+}
+
+function ChainLogo({ src, label }) {
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    setFailed(false);
+  }, [src]);
+
+  if (!src || failed) {
+    return (
+      <span style={{
+        width: 12,
+        height: 12,
+        borderRadius: '50%',
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: '8px',
+        lineHeight: 1,
+        background: 'rgba(100, 116, 139, 0.2)',
+        color: theme.colors.textMuted,
+        border: `1px solid ${theme.colors.border}`,
+      }}>
+        {(label || '?').charAt(0).toUpperCase()}
+      </span>
+    );
+  }
+
+  return (
+    <img
+      src={src}
+      alt={label}
+      width={12}
+      height={12}
+      style={{ borderRadius: '50%' }}
+      onError={() => setFailed(true)}
+    />
+  );
+}
+
 // APY Table Component with Cyberpunk styling - Mobile Responsive
-function ApyTable({ data }) {
+function ApyTable({ data, apySortDirection = 'desc', onToggleApySort }) {
   const { t } = useLanguage();
   const [hoveredRow, setHoveredRow] = useState(null);
 
@@ -539,48 +689,6 @@ function ApyTable({ data }) {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Render logo component
-  const renderLogo = (row) => {
-    const logoSrc = (row.logoKey && LOGOS[row.logoKey]) || row.logoUrl;
-    if (logoSrc) {
-      return (
-        <img
-          src={logoSrc}
-          alt={row.platformName || row.provider}
-          width={32}
-          height={32}
-          style={{
-            borderRadius: theme.radius.sm,
-            border: `1px solid ${theme.colors.border}`,
-            background: theme.colors.bgInput,
-            flexShrink: 0,
-          }}
-          onError={(e) => {
-            e.target.style.display = 'none';
-          }}
-        />
-      );
-    }
-    return (
-      <div style={{
-        width: 32,
-        height: 32,
-        borderRadius: theme.radius.sm,
-        background: theme.colors.gradientPrimary,
-        opacity: 0.5,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontSize: '12px',
-        fontWeight: 700,
-        color: '#fff',
-        flexShrink: 0,
-      }}>
-        {(row.platformName || row.provider || '?').charAt(0).toUpperCase()}
-      </div>
-    );
-  };
-
   // Mobile card render
   const renderMobileCard = (row, idx) => {
     const chainColor = getChainColor(row.chain) || row.chainColor || null;
@@ -596,22 +704,13 @@ function ApyTable({ data }) {
         {/* Header: Protocol + APY */}
         <div style={tableStyles.mobileCardHeader}>
           <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flex: 1, minWidth: 0 }}>
-            {renderLogo(row)}
+            <ProtocolLogo row={row} />
             <div style={{ minWidth: 0 }}>
               <div style={{ ...tableStyles.provider, fontSize: '13px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 {row.platformName || row.provider}
               </div>
               <div style={tableStyles.chainBadge(chainColor)}>
-                {chainLogoSrc && (
-                  <img
-                    src={chainLogoSrc}
-                    alt={row.chainName || row.chain}
-                    width={12}
-                    height={12}
-                    style={{ borderRadius: '50%' }}
-                    onError={(e) => { e.target.style.display = 'none'; }}
-                  />
-                )}
+                <ChainLogo src={chainLogoSrc} label={row.chainName || row.chain} />
                 {row.chainName || row.chain || '...'}
               </div>
             </div>
@@ -681,7 +780,7 @@ function ApyTable({ data }) {
       >
         {/* Protocol */}
         <div style={{ display: 'flex', gap: theme.spacing.md, alignItems: 'center' }}>
-          {renderLogo(row)}
+          <ProtocolLogo row={row} />
           <div>
             <div style={tableStyles.provider}>
               {row.platformName || row.provider}
@@ -692,16 +791,7 @@ function ApyTable({ data }) {
         {/* Chain */}
         <div style={{ display: 'flex', alignItems: 'center' }}>
           <div style={tableStyles.chainBadge(chainColor)}>
-            {chainLogoSrc && (
-              <img
-                src={chainLogoSrc}
-                alt={row.chainName || row.chain}
-                width={12}
-                height={12}
-                style={{ borderRadius: '50%' }}
-                onError={(e) => { e.target.style.display = 'none'; }}
-              />
-            )}
+            <ChainLogo src={chainLogoSrc} label={row.chainName || row.chain} />
             {row.chainName || row.chain || '...'}
           </div>
         </div>
@@ -760,7 +850,29 @@ function ApyTable({ data }) {
           <div>{t('tableProtocol')}</div>
           <div>{t('tableChain')}</div>
           <div>{t('tableAsset')}</div>
-          <div>{t('tableApy')}</div>
+          <div>
+            <button
+              type="button"
+              onClick={() => onToggleApySort && onToggleApySort()}
+              style={{
+                border: 'none',
+                background: 'transparent',
+                padding: 0,
+                color: theme.colors.textMuted,
+                fontSize: '11px',
+                fontWeight: 700,
+                textTransform: 'uppercase',
+                letterSpacing: '1px',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+              }}
+            >
+              <span>{t('tableApy')}</span>
+              <span>{apySortDirection === 'asc' ? '↑' : '↓'}</span>
+            </button>
+          </div>
           <div>{t('tableTvl')}</div>
           <div>{t('tableAction')}</div>
         </div>
@@ -907,7 +1019,8 @@ function NewsCard({ item }) {
 }
 
 // News List Component
-function NewsList({ data, minScore, setMinScore }) {
+function NewsList({ data, minScore, setMinScore, hasPendingUpdate, pendingCount, onLoadUpdates }) {
+  const { language, t } = useLanguage();
   const filterStyles = {
     container: {
       display: 'flex',
@@ -946,10 +1059,42 @@ function NewsList({ data, minScore, setMinScore }) {
       display: 'grid',
       gap: theme.spacing.md,
     },
+    updateBanner: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: theme.spacing.md,
+      marginBottom: theme.spacing.md,
+      padding: theme.spacing.md,
+      background: 'rgba(0, 255, 136, 0.08)',
+      borderRadius: theme.radius.md,
+      border: '1px solid rgba(0, 255, 136, 0.28)',
+      color: theme.colors.neonGreen,
+    },
+    updateButton: {
+      border: 'none',
+      borderRadius: theme.radius.md,
+      background: theme.colors.gradientPrimary,
+      color: '#fff',
+      padding: '8px 12px',
+      fontSize: '12px',
+      fontWeight: 700,
+      cursor: 'pointer',
+    },
   };
 
   return (
     <div>
+      {hasPendingUpdate && (
+        <div style={filterStyles.updateBanner}>
+          <span style={{ fontSize: '12px', fontWeight: 700 }}>
+            {t('newsUpdatesReady')} ({pendingCount})
+          </span>
+          <button type="button" style={filterStyles.updateButton} onClick={onLoadUpdates}>
+            {t('newsLoadUpdates')}
+          </button>
+        </div>
+      )}
       <div style={filterStyles.container}>
         <span style={filterStyles.label}>Min Score:</span>
         <input
@@ -961,6 +1106,20 @@ function NewsList({ data, minScore, setMinScore }) {
           max={10}
         />
         <span style={filterStyles.hint}>1 = all | 10 = critical only</span>
+        {language === 'zh' && (
+          <div style={{
+            marginLeft: 'auto',
+            padding: '6px 12px',
+            background: 'rgba(255, 136, 0, 0.1)',
+            border: '1px solid rgba(255, 136, 0, 0.3)',
+            borderRadius: theme.radius.md,
+            color: theme.colors.neonOrange,
+            fontSize: '11px',
+            fontWeight: 600,
+          }}>
+            📰 新闻内容为英文原文
+          </div>
+        )}
       </div>
       <div style={filterStyles.grid}>
         {data.length === 0 ? (
@@ -1315,18 +1474,24 @@ function StatsBar({ apyCount, newsCount }) {
 // Main App Component
 function App() {
   const { t } = useLanguage();
-  const [tab, setTab] = useState('apy');
+  const [tab, setTab] = useState(() => {
+    if (typeof window === 'undefined') return 'apy';
+    return getTabFromPath(window.location.pathname);
+  });
   const [apy, setApy] = useState([]);
   const [news, setNews] = useState([]);
-  const [cexLinks, setCexLinks] = useState([]);
+  const [pendingNews, setPendingNews] = useState([]);
+  const [hasPendingNewsUpdate, setHasPendingNewsUpdate] = useState(false);
+  const [strategies, setStrategies] = useState([]);
+  const [strategiesLoading, setStrategiesLoading] = useState(false);
   const [minScore, setMinScore] = useState(6);
   const [err, setErr] = useState('');
-  const [loading, setLoading] = useState(false);
   // Default to 'dex' filter for DeFi stablecoin yields
   const [apyFilter, setApyFilter] = useState('dex');
   // TVL and APY filters
   const [minTvl, setMinTvl] = useState(1); // in millions
   const [minApy, setMinApy] = useState(3); // in percentage
+  const [apySortDirection, setApySortDirection] = useState('desc');
   // Chain filter
   const [selectedChain, setSelectedChain] = useState('all');
 
@@ -1343,10 +1508,22 @@ function App() {
 
   const tabs = useMemo(() => [
     { id: 'apy', name: t('tabYields'), icon: '$' },
-    { id: 'cex', name: t('tabCexLinks'), icon: 'C' },
+    { id: 'strategy', name: t('tabStrategies'), icon: 'S' },
     { id: 'news', name: t('tabNews'), icon: '#' },
     { id: 'settings', name: t('tabConfig'), icon: '>' },
   ], [t]);
+
+  function changeTab(nextTab, { replace = false } = {}) {
+    setTab(nextTab);
+    if (typeof window === 'undefined') return;
+    const nextPath = getRouteFromTab(nextTab);
+    if (window.location.pathname === nextPath) return;
+    if (replace) {
+      window.history.replaceState({}, '', nextPath);
+    } else {
+      window.history.pushState({}, '', nextPath);
+    }
+  }
 
   async function loadApy() {
     const r = await fetch(`${API_BASE}/api/apy?limit=50`);
@@ -1355,34 +1532,91 @@ function App() {
     setApy(j.data?.items || j.items || []);
   }
 
-  async function loadNews() {
-    const r = await fetch(`${API_BASE}/api/news?limit=80&minScore=${minScore}`);
+  async function fetchNewsData(score = minScore) {
+    const r = await fetch(`${API_BASE}/api/news?limit=80&minScore=${score}`);
     const j = await r.json();
-    // Support both old format (j.items) and new format (j.data.items)
-    setNews(j.data?.items || j.items || []);
+    return j.data?.items || j.items || [];
   }
 
-  async function loadCexLinks() {
-    const r = await fetch(`${API_BASE}/api/cex-links`);
-    const j = await r.json();
-    setCexLinks(j.data?.items || j.items || []);
+  async function loadNews() {
+    const items = await fetchNewsData(minScore);
+    setNews(items);
+    setPendingNews([]);
+    setHasPendingNewsUpdate(false);
+    return items;
+  }
+
+  function applyPendingNews() {
+    if (!pendingNews.length) return;
+    setNews(pendingNews);
+    setPendingNews([]);
+    setHasPendingNewsUpdate(false);
+  }
+
+  async function checkNewsUpdates() {
+    const latest = await fetchNewsData(minScore);
+    if (!news.length) {
+      setNews(latest);
+      return;
+    }
+
+    const latestSignature = buildNewsSignature(latest);
+    const currentSignature = buildNewsSignature(news);
+    if (!latestSignature || latestSignature === currentSignature) return;
+
+    setPendingNews(latest);
+    setHasPendingNewsUpdate(true);
+  }
+
+  async function loadStrategies() {
+    setStrategiesLoading(true);
+    try {
+      const responses = await Promise.all(
+        STRATEGY_ENDPOINTS.map((path) => fetch(`${API_BASE}${path}?top=10`))
+      );
+      const payloads = await Promise.all(responses.map((r) => r.json()));
+      const items = payloads
+        .map((j) => j.data || null)
+        .filter(Boolean);
+      setStrategies(items);
+    } finally {
+      setStrategiesLoading(false);
+    }
   }
 
   async function refreshData() {
-    setLoading(true);
     try {
       setErr('');
-      await Promise.all([loadApy(), loadNews(), loadCexLinks()]);
+      await Promise.all([loadApy(), loadNews(), loadStrategies()]);
     } catch (e) {
       setErr(String(e?.message || e));
     }
-    setLoading(false);
   }
 
   useEffect(() => {
     refreshData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+
+    const routeTab = getTabFromPath(window.location.pathname);
+    if (routeTab !== tab) {
+      setTab(routeTab);
+    } else {
+      const canonicalPath = getRouteFromTab(tab);
+      if (window.location.pathname !== canonicalPath) {
+        window.history.replaceState({}, '', canonicalPath);
+      }
+    }
+
+    const onPopState = () => {
+      setTab(getTabFromPath(window.location.pathname));
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, [tab]);
 
   const filteredApy = useMemo(() => {
     let result = apy;
@@ -1409,13 +1643,36 @@ function App() {
       result = result.filter((x) => (x.apy || 0) >= minApy);
     }
 
-    return result;
-  }, [apy, apyFilter, selectedChain, minTvl, minApy]);
+    const sorted = [...result].sort((a, b) => {
+      const av = Number(a.apy ?? -Infinity);
+      const bv = Number(b.apy ?? -Infinity);
+      if (av !== bv) return apySortDirection === 'asc' ? av - bv : bv - av;
+      return (b.tvlUsd ?? 0) - (a.tvlUsd ?? 0);
+    });
+
+    return sorted;
+  }, [apy, apyFilter, selectedChain, minTvl, minApy, apySortDirection]);
+
+  function toggleApySort() {
+    setApySortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+  }
 
   useEffect(() => {
     if (tab === 'news') loadNews().catch(() => {});
+    if (tab === 'strategy' && strategies.length === 0) loadStrategies().catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [minScore, tab]);
+
+  useEffect(() => {
+    if (tab !== 'news') return undefined;
+
+    const timer = window.setInterval(() => {
+      checkNewsUpdates().catch(() => {});
+    }, 60_000);
+
+    return () => window.clearInterval(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, minScore, news]);
 
   return (
     <div style={styles.container}>
@@ -1442,7 +1699,7 @@ function App() {
               {tabs.map(tabItem => (
                 <button
                   key={tabItem.id}
-                  onClick={() => setTab(tabItem.id)}
+                  onClick={() => changeTab(tabItem.id)}
                   style={styles.navButton(tab === tabItem.id)}
                   className="nav-button"
                 >
@@ -1457,24 +1714,6 @@ function App() {
             </div>
 
             <div className="header-buttons" style={{ display: 'flex', gap: theme.spacing.sm, alignItems: 'center' }}>
-              <button
-                onClick={refreshData}
-                disabled={loading}
-                className="refresh-button"
-                style={{
-                  ...styles.refreshButton,
-                  opacity: loading ? 0.6 : 1,
-                  borderColor: loading ? theme.colors.borderCyan : theme.colors.border,
-                }}
-              >
-                <span style={{
-                  display: 'inline-block',
-                  animation: loading ? 'spin 1s linear infinite' : 'none',
-                  fontFamily: theme.fonts.mono,
-                }}>@</span>
-                <span className="refresh-text">{loading ? t('syncing') : t('refresh')}</span>
-              </button>
-
               <LanguageToggle />
               <div className="wallet-button">
                 <WalletConnectButton />
@@ -1646,11 +1885,24 @@ function App() {
                 <span style={{ color: theme.colors.electricCyanLight, fontWeight: 600 }}>{filteredApy.length}</span> pools
               </div>
             </div>
-            <ApyTable data={filteredApy} />
+            <ApyTable
+              data={filteredApy}
+              apySortDirection={apySortDirection}
+              onToggleApySort={toggleApySort}
+            />
           </div>
         )}
-        {tab === 'cex' && <CexLinks items={cexLinks} />}
-        {tab === 'news' && <NewsList data={news} minScore={minScore} setMinScore={setMinScore} />}
+        {tab === 'strategy' && <StrategyPage groups={strategies} loading={strategiesLoading} t={t} />}
+        {tab === 'news' && (
+          <NewsList
+            data={news}
+            minScore={minScore}
+            setMinScore={setMinScore}
+            hasPendingUpdate={hasPendingNewsUpdate}
+            pendingCount={pendingNews.length}
+            onLoadUpdates={applyPendingNews}
+          />
+        )}
         {tab === 'settings' && <Settings apiBase={API_BASE} />}
 
         {/* Footer */}

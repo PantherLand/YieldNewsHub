@@ -37,6 +37,13 @@ function extractTags(title = '', summary = '') {
 export async function pollNewsOnce({ pushFn } = {}) {
   const sources = await prisma.newsSource.findMany({ where: { enabled: true } });
 
+  let totalNew = 0;
+  let totalUpdated = 0;
+  let sourcesProcessed = 0;
+  let sourcesFailed = 0;
+
+  console.log(`[news] Polling ${sources.length} news sources...`);
+
   for (const s of sources) {
     try {
       // rss-parser uses node-fetch internally; but some feeds need manual fetch. We'll try parser first.
@@ -54,6 +61,9 @@ export async function pollNewsOnce({ pushFn } = {}) {
         feed = await parser.parseString(xml);
       }
 
+      let newItems = 0;
+      let updatedItems = 0;
+
       for (const item of feed.items || []) {
         const url = item.link || item.guid;
         if (!url) continue;
@@ -65,8 +75,11 @@ export async function pollNewsOnce({ pushFn } = {}) {
         const score = scoreItem(title, summary);
         const tags = extractTags(title, summary);
 
+        // Check if item exists
+        const existing = await prisma.newsItem.findUnique({ where: { url } });
+
         // upsert by unique url
-        const created = await prisma.newsItem.upsert({
+        await prisma.newsItem.upsert({
           where: { url },
           update: {
             title,
@@ -87,16 +100,39 @@ export async function pollNewsOnce({ pushFn } = {}) {
           },
         });
 
-        // Push only if it's fresh and important-ish
-        if (pushFn && created && score >= 6) {
-          const ageMs = publishedAt ? Date.now() - publishedAt.getTime() : 0;
-          if (!publishedAt || ageMs < 1000 * 60 * 60 * 24) {
-            await pushFn({ title, url, score, tags });
+        if (existing) {
+          updatedItems++;
+        } else {
+          newItems++;
+
+          // Push only if it's fresh and important-ish
+          if (pushFn && score >= 6) {
+            const ageMs = publishedAt ? Date.now() - publishedAt.getTime() : 0;
+            if (!publishedAt || ageMs < 1000 * 60 * 60 * 24) {
+              await pushFn({ title, url, score, tags });
+            }
           }
         }
       }
+
+      totalNew += newItems;
+      totalUpdated += updatedItems;
+      sourcesProcessed++;
+
+      console.log(`[news] ✓ ${s.name}: ${newItems} new, ${updatedItems} updated`);
     } catch (e) {
-      console.warn(`[news] failed source=${s.name}`, e?.message || e);
+      sourcesFailed++;
+      console.warn(`[news] ✗ ${s.name}: ${e?.message || e}`);
     }
   }
+
+  console.log(`[news] Poll complete: ${sourcesProcessed}/${sources.length} sources OK, ${totalNew} new items, ${totalUpdated} updated`);
+
+  return {
+    success: true,
+    sourcesProcessed,
+    sourcesFailed,
+    totalNew,
+    totalUpdated,
+  };
 }
