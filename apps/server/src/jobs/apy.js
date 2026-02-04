@@ -104,15 +104,8 @@ function isStableOnlyPool(p) {
     return false;
   }
 
-  // For pools with DeFiLlama's stablecoin flag
-  if (p?.stablecoin === true) {
-    // Additional check: ensure no unknown tokens mixed in
-    // Allow if at least one recognized stablecoin is present
-    const hasStable = parts.some((sym) => isStableSymbol(sym));
-    return hasStable;
-  }
-
-  // For pools without the stablecoin flag, require ALL tokens to be stablecoins
+  // Require ALL tokens in the pool to be recognized stablecoins
+  // This ensures we only show pure stablecoin pools, regardless of DeFiLlama's stablecoin flag
   for (const sym of parts) {
     if (!isStableSymbol(sym)) return false;
   }
