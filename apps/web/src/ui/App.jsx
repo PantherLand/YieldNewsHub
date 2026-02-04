@@ -295,6 +295,14 @@ const styles = {
     alignItems: 'center',
     gap: theme.spacing.md,
   },
+  logoButton: {
+    border: 'none',
+    background: 'transparent',
+    padding: 0,
+    color: 'inherit',
+    cursor: 'pointer',
+    textAlign: 'left',
+  },
 
   logoIcon: {
     width: '52px',
@@ -1774,7 +1782,13 @@ function App() {
       <div style={styles.content}>
         {/* Header - Mobile Responsive */}
         <div style={styles.header} className="app-header">
-          <div style={styles.logo} className="app-logo">
+          <button
+            type="button"
+            onClick={() => changeTab('apy')}
+            style={{ ...styles.logo, ...styles.logoButton }}
+            className="app-logo logo-home-link"
+            aria-label="Go to homepage"
+          >
             <div style={styles.logoIcon} className="logo-icon">
               <LogoIcon size={52} />
             </div>
@@ -1782,7 +1796,7 @@ function App() {
               <h1 style={styles.title} className="app-title">{t('title')}</h1>
               <div style={styles.subtitle} className="app-subtitle">{t('subtitle')}</div>
             </div>
-          </div>
+          </button>
 
           <div className="header-actions" style={{ display: 'flex', alignItems: 'center', gap: theme.spacing.md, flexWrap: 'wrap' }}>
             <div style={styles.nav} className="nav-tabs">
@@ -2089,6 +2103,12 @@ function App() {
 
         button:active:not(:disabled) {
           transform: translateY(0);
+        }
+
+        .logo-home-link:hover,
+        .logo-home-link:active {
+          transform: none !important;
+          box-shadow: none !important;
         }
 
         /* Scrollbar */

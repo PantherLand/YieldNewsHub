@@ -66,22 +66,21 @@ export const DEFAULT_NEWS_SOURCES = [
 
   // === Chinese News Sources (中文新闻源) ===
   // High-quality Chinese crypto news sources (tested and verified)
-
-  // Note: 律动BlockBeats temporarily disabled due to SSL/proxy issues
-  // Uncomment when network issue is resolved
-  /*
   {
     name: '律动BlockBeats',
     kind: 'RSS',
     url: 'https://api.theblockbeats.news/v2/rss/all',
   },
-  */
 
+  // Note: 區塊客 Blockcast has slow/hanging RSS parsing issues
+  // Temporarily disabled to avoid timeout
+  /*
   {
     name: '區塊客 Blockcast',
     kind: 'RSS',
     url: 'https://blockcast.it/feed/',
   },
+  */
 
   // Note: 金色财经 requires self-hosted RSSHub instance
   // Uncomment if you have deployed your own RSSHub
