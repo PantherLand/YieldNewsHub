@@ -18,6 +18,7 @@ export const LOGOS = {
 };
 
 // Chain logos - use DefiLlama CDN for reliable logos
+// Keys are lowercase for consistent lookup
 export const CHAIN_LOGOS = {
   ethereum: 'https://icons.llama.fi/chains/rsz_ethereum.jpg',
   arbitrum: 'https://icons.llama.fi/chains/rsz_arbitrum.jpg',
@@ -25,16 +26,70 @@ export const CHAIN_LOGOS = {
   polygon: 'https://icons.llama.fi/chains/rsz_polygon.jpg',
   base: 'https://icons.llama.fi/chains/rsz_base.jpg',
   avalanche: 'https://icons.llama.fi/chains/rsz_avalanche.jpg',
+  bsc: 'https://icons.llama.fi/chains/rsz_bsc.jpg',
   bnb: 'https://icons.llama.fi/chains/rsz_bsc.jpg',
+  gnosis: 'https://icons.llama.fi/chains/rsz_gnosis.jpg',
+  fantom: 'https://icons.llama.fi/chains/rsz_fantom.jpg',
+  linea: 'https://icons.llama.fi/chains/rsz_linea.jpg',
+  scroll: 'https://icons.llama.fi/chains/rsz_scroll.jpg',
+  zksync: 'https://icons.llama.fi/chains/rsz_zksync-era.jpg',
+  mantle: 'https://icons.llama.fi/chains/rsz_mantle.jpg',
+  blast: 'https://icons.llama.fi/chains/rsz_blast.jpg',
 };
 
-// Chain colors for badges
-export const CHAIN_COLORS = {
-  Ethereum: '#627EEA',
-  Arbitrum: '#28A0F0',
-  Optimism: '#FF0420',
-  Polygon: '#8247E5',
-  Base: '#0052FF',
-  Avalanche: '#E84142',
-  BSC: '#F0B90B',
+// Chain colors for badges - supports both title case and lowercase lookups
+const chainColorMap = {
+  ethereum: '#627EEA',
+  arbitrum: '#28A0F0',
+  optimism: '#FF0420',
+  polygon: '#8247E5',
+  base: '#0052FF',
+  avalanche: '#E84142',
+  bsc: '#F0B90B',
+  bnb: '#F0B90B',
+  gnosis: '#04795B',
+  fantom: '#1969FF',
+  linea: '#61DFFF',
+  scroll: '#FFEEDA',
+  zksync: '#8C8DFC',
+  mantle: '#000000',
+  blast: '#FCFC03',
 };
+
+// Export CHAIN_COLORS with both title case and lowercase keys for compatibility
+export const CHAIN_COLORS = {
+  // Title case (legacy format)
+  Ethereum: chainColorMap.ethereum,
+  Arbitrum: chainColorMap.arbitrum,
+  Optimism: chainColorMap.optimism,
+  Polygon: chainColorMap.polygon,
+  Base: chainColorMap.base,
+  Avalanche: chainColorMap.avalanche,
+  BSC: chainColorMap.bsc,
+  Gnosis: chainColorMap.gnosis,
+  Fantom: chainColorMap.fantom,
+  Linea: chainColorMap.linea,
+  Scroll: chainColorMap.scroll,
+  zkSync: chainColorMap.zksync,
+  Mantle: chainColorMap.mantle,
+  Blast: chainColorMap.blast,
+  // Lowercase (new format)
+  ...chainColorMap,
+};
+
+// Helper function to get chain logo with case-insensitive lookup
+export function getChainLogo(chain) {
+  if (!chain) return null;
+  const key = String(chain).toLowerCase().replace(/[^a-z0-9]/g, '');
+  return CHAIN_LOGOS[key] || null;
+}
+
+// Helper function to get chain color with case-insensitive lookup
+export function getChainColor(chain) {
+  if (!chain) return null;
+  // Try exact match first
+  if (CHAIN_COLORS[chain]) return CHAIN_COLORS[chain];
+  // Try lowercase
+  const key = String(chain).toLowerCase().replace(/[^a-z0-9]/g, '');
+  return chainColorMap[key] || null;
+}

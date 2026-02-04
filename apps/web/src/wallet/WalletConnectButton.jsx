@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ConnectButton } from '@rainbow-me/rainbowkit';
 
 // Cyberpunk theme tokens (matching App.jsx design system)
@@ -32,6 +32,15 @@ const theme = {
 };
 
 export function WalletConnectButton() {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   return (
     <ConnectButton.Custom>
       {({
@@ -55,6 +64,7 @@ export function WalletConnectButton() {
                 userSelect: 'none',
               },
             })}
+            style={{ width: '100%' }}
           >
             {(() => {
               if (!connected) {
@@ -62,25 +72,29 @@ export function WalletConnectButton() {
                   <button
                     onClick={openConnectModal}
                     type="button"
+                    className="wallet-connect-btn"
                     style={{
                       display: 'flex',
                       alignItems: 'center',
+                      justifyContent: 'center',
                       gap: '8px',
-                      padding: '10px 18px',
+                      padding: isMobile ? '10px 14px' : '10px 18px',
                       borderRadius: theme.radius.md,
                       border: `1px solid ${theme.colors.border}`,
                       background: theme.colors.gradientPrimary,
                       color: '#fff',
                       cursor: 'pointer',
-                      fontSize: '13px',
+                      fontSize: isMobile ? '12px' : '13px',
                       fontWeight: 600,
                       transition: theme.transition.fast,
                       boxShadow: theme.colors.glowPurple,
                       fontFamily: 'inherit',
+                      width: '100%',
+                      whiteSpace: 'nowrap',
                     }}
                   >
                     <WalletIcon />
-                    Connect Wallet
+                    <span className="wallet-btn-text">{isMobile ? 'Connect' : 'Connect Wallet'}</span>
                   </button>
                 );
               }
@@ -93,6 +107,7 @@ export function WalletConnectButton() {
                     style={{
                       display: 'flex',
                       alignItems: 'center',
+                      justifyContent: 'center',
                       gap: '8px',
                       padding: '10px 18px',
                       borderRadius: theme.radius.md,
@@ -104,6 +119,7 @@ export function WalletConnectButton() {
                       fontWeight: 600,
                       transition: theme.transition.fast,
                       fontFamily: 'inherit',
+                      width: '100%',
                     }}
                   >
                     Wrong Network
@@ -111,6 +127,68 @@ export function WalletConnectButton() {
                 );
               }
 
+              // Mobile: single combined button
+              if (isMobile) {
+                return (
+                  <button
+                    onClick={openAccountModal}
+                    type="button"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      padding: '10px 14px',
+                      borderRadius: theme.radius.md,
+                      border: `1px solid ${theme.colors.borderHover}`,
+                      background: theme.colors.bgCard,
+                      color: theme.colors.textPrimary,
+                      cursor: 'pointer',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      transition: theme.transition.fast,
+                      fontFamily: theme.fonts.mono,
+                      width: '100%',
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: '50%',
+                        background: theme.colors.neonGreen,
+                        boxShadow: `0 0 8px ${theme.colors.neonGreen}`,
+                        flexShrink: 0,
+                      }}
+                    />
+                    {chain.hasIcon && (
+                      <div
+                        style={{
+                          width: 16,
+                          height: 16,
+                          borderRadius: '50%',
+                          overflow: 'hidden',
+                          background: chain.iconBackground,
+                          flexShrink: 0,
+                        }}
+                      >
+                        {chain.iconUrl && (
+                          <img
+                            alt={chain.name ?? 'Chain icon'}
+                            src={chain.iconUrl}
+                            style={{ width: 16, height: 16 }}
+                          />
+                        )}
+                      </div>
+                    )}
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {account.displayName}
+                    </span>
+                  </button>
+                );
+              }
+
+              // Desktop: separate chain and account buttons
               return (
                 <div style={{ display: 'flex', gap: '8px' }}>
                   {/* Chain Button */}
