@@ -196,7 +196,8 @@ export function WalletConnectButton() {
                     onClick={openChainModal}
                     type="button"
                     style={{
-                      display: 'flex',
+                      // display: 'flex',
+                      display: 'none',
                       alignItems: 'center',
                       gap: '6px',
                       padding: '10px 14px',
