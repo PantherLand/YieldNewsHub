@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import { LOGOS } from './logos.js';
+import { useLanguage } from '../i18n/index.js';
 
 const theme = {
   colors: {
@@ -15,6 +16,7 @@ const theme = {
 };
 
 export default function CexLinks({ items }) {
+  const { t } = useLanguage();
   const groups = useMemo(() => {
     const by = new Map();
     for (const it of items || []) {
@@ -28,7 +30,7 @@ export default function CexLinks({ items }) {
   return (
     <div style={{ display: 'grid', gap: theme.spacing.lg }}>
       <div style={{ color: theme.colors.textMuted, fontSize: 13 }}>
-        CEX is links-only for now (no API integration). Click to open the exchange Earn page and deposit the selected stablecoin.
+        {t('cexDescription')}
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: theme.spacing.lg }}>
@@ -41,7 +43,7 @@ export default function CexLinks({ items }) {
               <div style={{ fontWeight: 800, color: theme.colors.textPrimary, letterSpacing: 0.2 }}>
                 {rows[0]?.exchange || key}
               </div>
-              <div style={{ marginLeft: 'auto', fontSize: 12, color: theme.colors.textMuted }}>{rows.length} assets</div>
+              <div style={{ marginLeft: 'auto', fontSize: 12, color: theme.colors.textMuted }}>{rows.length} {t('cexAssets')}</div>
             </div>
 
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -70,7 +72,7 @@ export default function CexLinks({ items }) {
       </div>
 
       <div style={{ color: theme.colors.textMuted, fontSize: 12 }}>
-        Risk note: CEX products involve custody/credit risk. Always verify product type (flexible/locked) and terms on the exchange.
+        {t('cexRiskNote')}
       </div>
     </div>
   );
