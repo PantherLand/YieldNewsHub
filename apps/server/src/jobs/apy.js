@@ -67,18 +67,7 @@ function parseSymbols(symbol = '') {
     .filter(Boolean);
 }
 
-const DENY_CHAINS = new Set(['solana', 'sui', 'aptos']);
-
-function isAllowedChain(chain = '') {
-  const c = String(chain || '').toLowerCase();
-  if (!c) return true;
-  return !DENY_CHAINS.has(c);
-}
-
 function isStableOnlyPool(p) {
-  // Drop chains we don't want in MVP (e.g. Solana)
-  if (!isAllowedChain(p?.chain)) return false;
-
   const parts = parseSymbols(p?.symbol || '');
   if (!parts.length) return false;
 
