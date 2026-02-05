@@ -168,11 +168,13 @@ function normalizeMorphoChain(chain = {}) {
   return chain?.network || null;
 }
 
-function morphoUrlByChain(chainName = '') {
+function morphoVaultUrl(address, chainName = '') {
   const chain = String(chainName || '').toLowerCase();
-  if (chain === 'ethereum') return 'https://app.morpho.org/?network=mainnet';
-  if (chain === 'base') return 'https://app.morpho.org/?network=base';
-  return 'https://app.morpho.org/';
+  const network = chain === 'base' ? 'base' : 'mainnet';
+  if (address) {
+    return `https://app.morpho.org/vault?vault=${address}&network=${network}`;
+  }
+  return `https://app.morpho.org/?network=${network}`;
 }
 
 async function fetchMorphoSupplementPools() {
@@ -231,7 +233,7 @@ async function fetchMorphoSupplementPools() {
           stablecoin: true,
           exposure: 'single',
           ilRisk: 'no',
-          url: morphoUrlByChain(chain),
+          url: morphoVaultUrl(address, chain),
         };
       })
       .filter(Boolean);
@@ -607,6 +609,14 @@ export async function pollApyOnce() {
     const lendleSupplementPools = await fetchLendleSupplementPools();
 
     // If official pools are available, drop stale aggregator rows for same family.
+    if (morphoSupplementPools.length > 0) {
+      await prisma.apyOpportunity.deleteMany({
+        where: {
+          provider: { startsWith: 'morpho', mode: 'insensitive' },
+          externalId: { not: { startsWith: 'morpho-v2:' } },
+        },
+      });
+    }
     if (venusSupplementPools.length > 0) {
       await prisma.apyOpportunity.deleteMany({
         where: {
@@ -626,6 +636,8 @@ export async function pollApyOnce() {
 
     const basePools = pools.filter((p) => {
       const project = String(p?.project || '').toLowerCase();
+      // When we have official API data, skip DeFiLlama data for that protocol
+      if (morphoSupplementPools.length > 0 && isMorphoFamilyProject(project)) return false;
       if (venusSupplementPools.length > 0 && isVenusFamilyProject(project)) return false;
       if (lendleSupplementPools.length > 0 && isLendleFamilyProject(project)) return false;
       return true;
