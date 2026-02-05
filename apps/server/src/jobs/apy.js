@@ -12,14 +12,35 @@ import { analyzeSymbol } from '../apy-intelligence.js';
 
 function isStableOnlyPool(p) {
   const symbol = analyzeSymbol(p?.symbol || '');
+  const project = String(p?.project || '').toLowerCase();
+
+  // Some lending vault symbols include strategy/provider words (e.g. "USDC Morpho Vault"),
+  // so allow trusted single-sided stablecoin vaults even if symbol isn't pure token format.
+  const allowNamedStableVault = (
+    [
+      'aave-v3',
+      'compound-v3',
+      'morpho',
+      'spark',
+      'euler-v2',
+      'maple',
+      'maple-finance',
+      'moonwell',
+      'fluid',
+    ].includes(project)
+    && p?.stablecoin === true
+    && symbol.directStableTokens.length >= 1
+    && String(p?.exposure || '').toLowerCase() === 'single'
+    && String(p?.ilRisk || '').toLowerCase() === 'no'
+  );
+
   if (!symbol.tokens.length) return false;
-  if (!symbol.pureDirectStable) return false;
+  if (!symbol.pureDirectStable && !allowNamedStableVault) return false;
   if (symbol.hasVolatileToken) return false;
 
   // Additional check: reject pools with suspiciously high APY (>50% usually indicates non-stable or ponzi risk)
   if (typeof p.apy === 'number' && p.apy > 50) {
     // Only allow high APY if it's a well-known protocol AND has the stablecoin flag
-    const project = String(p.project || '').toLowerCase();
     const isTrustedHighYield = ['pendle'].includes(project);
     if (!isTrustedHighYield || p?.stablecoin !== true) {
       return false;
@@ -55,6 +76,20 @@ const DEFILLAMA_PROJECT_ALLOWLIST = new Set([
   'morpho',
   'spark',
   'euler-v2',
+  'maple',
+  'maple-finance',
+  'moonwell',
+  'fluid',
+  'venus',
+  // Additional protocols requested by product
+  'avantis',
+  'avantisfi',
+  'goldfinch',
+  'goldfinch-protocol',
+  'autofinance',
+  'autofarm',
+  'wasabi',
+  'wasabi-protocol',
   // DEX / Yield
   'curve-dex',
   'yearn-finance',
@@ -62,13 +97,37 @@ const DEFILLAMA_PROJECT_ALLOWLIST = new Set([
   'pendle',
 ]);
 
+// Some projects should only be shown on specific chains for clearer UX.
+const PROJECT_CHAIN_ALLOWLIST = new Map([
+  ['wasabi', new Set(['base'])],
+  ['wasabi-protocol', new Set(['base'])],
+]);
+
 // 最低 APY 阈值 (3%)
 const MIN_APY_THRESHOLD = 3;
+const PROJECT_MIN_APY_THRESHOLD = new Map([
+  // Mature lending vaults can still be attractive below 3%.
+  ['morpho', 1.5],
+  ['maple', 1.5],
+  ['maple-finance', 1.5],
+]);
 
-function isAllowedProject(project = '') {
+function isAllowedProject(project = '', chain = '') {
   const p = String(project || '').toLowerCase();
   if (!p) return false;
-  return DEFILLAMA_PROJECT_ALLOWLIST.has(p);
+  if (!DEFILLAMA_PROJECT_ALLOWLIST.has(p)) return false;
+
+  const chainAllowlist = PROJECT_CHAIN_ALLOWLIST.get(p);
+  if (!chainAllowlist) return true;
+
+  const normalizedChain = String(chain || '').toLowerCase();
+  return chainAllowlist.has(normalizedChain);
+}
+
+function passesApyThreshold(pool = {}) {
+  const project = String(pool?.project || '').toLowerCase();
+  const minApy = PROJECT_MIN_APY_THRESHOLD.get(project) ?? MIN_APY_THRESHOLD;
+  return typeof pool.apy === 'number' && pool.apy >= minApy;
 }
 
 export async function pollApyOnce() {
@@ -82,15 +141,15 @@ export async function pollApyOnce() {
     const pools = json?.data || [];
 
     // pick direct stablecoin pools only (USDC/USDT/USDE/DAI)
-    // with: whitelisted project, TVL >= $1M, APY >= 3%
-    // sort by apy desc, limit to top 20
+    // with: whitelisted project, TVL >= $1M, APY threshold (default 3%, some core lending lower)
+    // sort by apy desc, keep more rows for frontend filtering and routing
     const filtered = pools
-      .filter((p) => isAllowedProject(p.project))
+      .filter((p) => isAllowedProject(p.project, p.chain))
       .filter((p) => isStableOnlyPool(p))
-      .filter((p) => typeof p.apy === 'number' && p.apy >= MIN_APY_THRESHOLD)
+      .filter((p) => passesApyThreshold(p))
       .filter((p) => (p.tvlUsd ?? 0) >= 1_000_000)
       .sort((a, b) => (b.apy ?? 0) - (a.apy ?? 0))
-      .slice(0, 20);
+      .slice(0, 50);
 
     for (const p of filtered) {
       const externalId = p.pool;

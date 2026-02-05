@@ -8,12 +8,42 @@ export const DEFI_PROJECT_LINKS = {
   'morpho': 'https://app.morpho.org/',
   'spark': 'https://app.spark.fi/',
   'euler-v2': 'https://app.euler.finance/',
+  'maple': 'https://app.maple.finance/',
+  'maple-finance': 'https://app.maple.finance/',
+  'moonwell': 'https://moonwell.fi/',
+  'fluid': 'https://fluid.io/',
+  'venus': 'https://app.venus.io/',
+  'autofinance': 'https://autofarm.network/',
+  'autofarm': 'https://autofarm.network/',
+  'wasabi': 'https://wasabi.xyz/',
+  'wasabi-protocol': 'https://wasabi.xyz/',
+  // Additional protocol app links
+  'avantis': 'https://www.avantisfi.com/earn',
+  'avantisfi': 'https://www.avantisfi.com/earn',
+  'goldfinch': 'https://app.goldfinch.finance/earn',
+  'goldfinch-protocol': 'https://app.goldfinch.finance/earn',
   // DEX / Yield
   'curve-dex': 'https://curve.fi/',
   'yearn-finance': 'https://yearn.fi/',
   'convex-finance': 'https://www.convexfinance.com/',
   'pendle': 'https://app.pendle.finance/',
 };
+
+// Prefer official app URLs for protocols where adapter URLs are often non-actionable.
+const FORCE_OFFICIAL_URL_PROJECTS = new Set([
+  'maple',
+  'maple-finance',
+  'moonwell',
+  'fluid',
+  'autofinance',
+  'autofarm',
+  'wasabi',
+  'wasabi-protocol',
+  'avantis',
+  'avantisfi',
+  'goldfinch',
+  'goldfinch-protocol',
+]);
 
 // Chain-specific market URLs for protocols that support direct deep linking
 const CHAIN_MARKET_URLS = {
@@ -55,6 +85,9 @@ const CHAIN_MARKET_URLS = {
     Ethereum: 'https://app.pendle.finance/trade/markets',
     Arbitrum: 'https://app.pendle.finance/trade/markets?chain=arbitrum',
   },
+  'venus': {
+    BSC: 'https://app.venus.io/core-pool?chainId=56',
+  },
 };
 
 // Optional manual overrides for specific pool ids (highest precision).
@@ -95,12 +128,18 @@ export function getBestDepositUrl({ poolId, project, chain, symbol, adapterUrl }
   const override = poolId ? POOL_LINK_OVERRIDES[String(poolId)] : null;
   if (isHttpUrl(override)) return override;
 
+  const projectKey = String(project || '').toLowerCase();
+  const official = officialDepositUrl(project, { chain, symbol });
+
+  if (FORCE_OFFICIAL_URL_PROJECTS.has(projectKey) && isHttpUrl(official)) {
+    return official;
+  }
+
   // Adapter URL is often the most precise, unless it's just a DeFiLlama fallback.
   if (isHttpUrl(adapterUrl) && !isDefiLlamaPoolUrl(adapterUrl)) {
     return adapterUrl;
   }
 
-  const official = officialDepositUrl(project, { chain, symbol });
   if (isHttpUrl(official)) return official;
 
   if (isHttpUrl(adapterUrl)) return adapterUrl;

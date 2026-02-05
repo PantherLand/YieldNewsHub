@@ -63,6 +63,9 @@ export const translations = {
     newsMinScoreHint: '1 = all | 10 = critical only',
     newsUnknownSource: 'Unknown',
     newsEnglishOriginal: 'News content is shown in original English',
+    newsReadMore: 'Read more',
+    newsBackToList: 'Back to list',
+    newsViewOriginal: 'View original',
 
     // CEX Links
     cexTitle: 'CEX Savings & Earn Products',
@@ -178,8 +181,11 @@ export const translations = {
     newsLoadUpdates: '\u70b9\u51fb\u52a0\u8f7d',
     newsMinScoreLabel: '\u6700\u4f4e\u5206\u6570:',
     newsMinScoreHint: '1 = \u5168\u90e8 | 10 = \u4ec5\u5173\u952e',
-    newsUnknownSource: '\u672a\u77e5\u6765\u6e90',
-    newsEnglishOriginal: '\u65b0\u95fb\u5185\u5bb9\u4fdd\u6301\u82f1\u6587\u539f\u6587',
+    newsUnknownSource: '未知来源',
+    newsEnglishOriginal: '新闻内容保持英文原文',
+    newsReadMore: '查看详情',
+    newsBackToList: '返回列表',
+    newsViewOriginal: '查看原文',
 
     // CEX Links
     cexTitle: 'CEX \u7406\u8d22\u4ea7\u54c1',

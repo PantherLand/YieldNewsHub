@@ -35,10 +35,18 @@ const TRUSTED_PROTOCOLS = new Set([
   'morpho',
   'spark',
   'euler-v2',
+  'maple',
+  'maple-finance',
+  'moonwell',
+  'fluid',
   'curve-dex',
   'yearn-finance',
   'convex-finance',
   'pendle',
+  'avantis',
+  'avantisfi',
+  'goldfinch',
+  'goldfinch-protocol',
 ]);
 
 const LOW_RISK_CHAINS = new Set(['ethereum', 'arbitrum', 'base', 'optimism']);

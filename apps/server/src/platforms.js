@@ -51,6 +51,36 @@ export const PLATFORM_META = {
     logoUrl: 'https://icons.llama.fi/euler.jpg',
     homeUrl: 'https://app.euler.finance/',
   },
+  maple: {
+    name: 'Maple',
+    logoKey: 'maple',
+    logoUrl: 'https://icons.llama.fi/maple.jpg',
+    homeUrl: 'https://app.maple.finance/',
+  },
+  moonwell: {
+    name: 'Moonwell',
+    logoKey: 'moonwell',
+    logoUrl: 'https://icons.llama.fi/moonwell.jpg',
+    homeUrl: 'https://moonwell.fi/',
+  },
+  fluid: {
+    name: 'Fluid',
+    logoKey: 'fluid',
+    logoUrl: 'https://icons.llama.fi/fluid.jpg',
+    homeUrl: 'https://fluid.io/',
+  },
+  venus: {
+    name: 'Venus',
+    logoKey: 'venus',
+    logoUrl: 'https://icons.llama.fi/venus.jpg',
+    homeUrl: 'https://app.venus.io/',
+  },
+  wasabi: {
+    name: 'Wasabi',
+    logoKey: 'wasabi',
+    logoUrl: 'https://icons.llama.fi/wasabi.jpg',
+    homeUrl: 'https://wasabi.xyz/',
+  },
 
   // DeFi protocols - DEX / Yield (using DefiLlama CDN for reliable logos)
   curve: {
@@ -189,6 +219,11 @@ export function normalizePlatformKey(provider = '') {
   if (p.includes('morpho')) return 'morpho';
   if (p.includes('spark')) return 'spark';
   if (p.includes('euler')) return 'euler';
+  if (p.includes('maple')) return 'maple';
+  if (p.includes('moonwell')) return 'moonwell';
+  if (p.includes('fluid')) return 'fluid';
+  if (p.includes('venus')) return 'venus';
+  if (p.includes('wasabi')) return 'wasabi';
   if (p.includes('curve')) return 'curve';
   if (p.includes('yearn')) return 'yearn';
   if (p.includes('convex')) return 'convex';

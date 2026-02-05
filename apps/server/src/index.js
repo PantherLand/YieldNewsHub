@@ -112,6 +112,27 @@ app.get('/api/news', asyncHandler(async (req, res) => {
   ));
 }));
 
+/**
+ * GET /api/news/:id
+ */
+app.get('/api/news/:id', asyncHandler(async (req, res) => {
+  const id = String(req.params.id || '').trim();
+  if (!id) {
+    throw new ApiError(ErrorCode.INVALID_PARAMETER, 'news id is required', 'id');
+  }
+
+  const item = await prisma.newsItem.findUnique({
+    where: { id },
+    include: { source: true },
+  });
+
+  if (!item) {
+    throw new ApiError(ErrorCode.NOT_FOUND, `news not found: ${id}`, 'id', 404);
+  }
+
+  res.json(successResponse({ item }));
+}));
+
 import { PLATFORM_META, normalizePlatformKey, getChainMeta } from './platforms.js';
 import { getBestDepositUrl } from './defiLinks.js';
 import { getCexLinks } from './cexLinks.js';
