@@ -185,7 +185,7 @@ async function fetchMorphoSupplementPools() {
       },
       body: JSON.stringify({
         query: MORPHO_VAULTS_QUERY,
-        variables: { first: 1000, chainIds: MORPHO_CHAIN_IDS },
+        variables: { first: 500, chainIds: MORPHO_CHAIN_IDS },
       }),
     });
 
