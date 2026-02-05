@@ -10,6 +10,133 @@ import { analyzeSymbol } from '../apy-intelligence.js';
 // DeFiLlama yields API:
 // https://yields.llama.fi/pools
 
+const MORPHO_GRAPHQL_URL = 'https://api.morpho.org/graphql';
+const MORPHO_CHAIN_IDS = [1, 8453];
+const MIN_MORPHO_POOLS_FROM_DEFILLAMA = 3;
+
+const MORPHO_VAULTS_QUERY = `
+  query MorphoVaultV2s($first: Int!, $chainIds: [Int!]) {
+    vaultV2s(first: $first, where: { chainId_in: $chainIds }) {
+      items {
+        address
+        symbol
+        name
+        totalAssetsUsd
+        avgNetApy
+        chain {
+          id
+          network
+        }
+      }
+    }
+  }
+`;
+
+function isMorphoFamilyProject(project = '') {
+  return String(project || '').toLowerCase().startsWith('morpho');
+}
+
+function inferDirectStableToken(text = '') {
+  const normalized = String(text || '').toUpperCase();
+  if (/(^|[^A-Z0-9])USDC([^A-Z0-9]|$)/.test(normalized)) return 'USDC';
+  if (/(^|[^A-Z0-9])USDT([^A-Z0-9]|$)/.test(normalized)) return 'USDT';
+  if (/(^|[^A-Z0-9])USDE([^A-Z0-9]|$)/.test(normalized)) return 'USDE';
+  if (/(^|[^A-Z0-9])DAI([^A-Z0-9]|$)/.test(normalized)) return 'DAI';
+  return null;
+}
+
+function normalizeMorphoApy(rawValue) {
+  const value = Number(rawValue);
+  if (!Number.isFinite(value) || value <= 0) return null;
+
+  // Morpho API may return decimal APY (0.04) while we store percentage (4.0).
+  if (value <= 1) return value * 100;
+  return value;
+}
+
+function normalizeMorphoChain(chain = {}) {
+  const chainId = Number(chain?.id);
+  if (chainId === 1) return 'Ethereum';
+  if (chainId === 8453) return 'Base';
+
+  const network = String(chain?.network || '').toLowerCase();
+  if (network === 'mainnet' || network === 'ethereum') return 'Ethereum';
+  if (network === 'base') return 'Base';
+
+  return chain?.network || null;
+}
+
+function morphoUrlByChain(chainName = '') {
+  const chain = String(chainName || '').toLowerCase();
+  if (chain === 'ethereum') return 'https://app.morpho.org/?network=mainnet';
+  if (chain === 'base') return 'https://app.morpho.org/?network=base';
+  return 'https://app.morpho.org/';
+}
+
+async function fetchMorphoSupplementPools() {
+  try {
+    const res = await fetch(MORPHO_GRAPHQL_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'User-Agent': 'YieldNewsHub/0.1',
+      },
+      body: JSON.stringify({
+        query: MORPHO_VAULTS_QUERY,
+        variables: { first: 1000, chainIds: MORPHO_CHAIN_IDS },
+      }),
+    });
+
+    if (!res.ok) {
+      throw new Error(`morpho api request failed: ${res.status}`);
+    }
+
+    const json = await res.json();
+    if (Array.isArray(json?.errors) && json.errors.length > 0) {
+      throw new Error(json.errors[0]?.message || 'morpho api returned graphql errors');
+    }
+
+    const items = Array.isArray(json?.data?.vaultV2s?.items)
+      ? json.data.vaultV2s.items
+      : [];
+
+    return items
+      .map((vault) => {
+        const address = String(vault?.address || '').toLowerCase();
+        if (!address) return null;
+
+        const chain = normalizeMorphoChain(vault?.chain);
+        const apy = normalizeMorphoApy(vault?.avgNetApy);
+        const tvlUsd = Number(vault?.totalAssetsUsd);
+        if (!Number.isFinite(apy) || !Number.isFinite(tvlUsd)) return null;
+
+        const rawSymbol = String(vault?.symbol || '').trim();
+        const stableHint = inferDirectStableToken(`${rawSymbol} ${String(vault?.name || '')}`);
+        const symbol = rawSymbol || stableHint || 'UNKNOWN';
+        const symbolInfo = analyzeSymbol(symbol);
+        const isDirectStable = Boolean(stableHint) || symbolInfo.directStableTokens.length > 0;
+        if (!isDirectStable) return null;
+
+        return {
+          pool: `morpho-v2:${chain || 'unknown'}:${address}`,
+          project: 'morpho-v2',
+          chain,
+          symbol,
+          apy,
+          tvlUsd,
+          stablecoin: true,
+          exposure: 'single',
+          ilRisk: 'no',
+          url: morphoUrlByChain(chain),
+        };
+      })
+      .filter(Boolean);
+  } catch (e) {
+    console.warn('[apy] morpho supplement failed', e?.message || e);
+    return [];
+  }
+}
+
 function isStableOnlyPool(p) {
   const symbol = analyzeSymbol(p?.symbol || '');
   const project = String(p?.project || '').toLowerCase();
@@ -20,15 +147,15 @@ function isStableOnlyPool(p) {
     [
       'aave-v3',
       'compound-v3',
-      'morpho',
       'spark',
       'euler-v2',
       'maple',
       'maple-finance',
       'moonwell',
       'fluid',
-    ].includes(project)
-    && p?.stablecoin === true
+    ].includes(project) || isMorphoFamilyProject(project)
+  ) && (
+    p?.stablecoin === true
     && symbol.directStableTokens.length >= 1
     && String(p?.exposure || '').toLowerCase() === 'single'
     && String(p?.ilRisk || '').toLowerCase() === 'no'
@@ -115,7 +242,7 @@ const PROJECT_MIN_APY_THRESHOLD = new Map([
 function isAllowedProject(project = '', chain = '') {
   const p = String(project || '').toLowerCase();
   if (!p) return false;
-  if (!DEFILLAMA_PROJECT_ALLOWLIST.has(p)) return false;
+  if (!isMorphoFamilyProject(p) && !DEFILLAMA_PROJECT_ALLOWLIST.has(p)) return false;
 
   const chainAllowlist = PROJECT_CHAIN_ALLOWLIST.get(p);
   if (!chainAllowlist) return true;
@@ -126,6 +253,9 @@ function isAllowedProject(project = '', chain = '') {
 
 function passesApyThreshold(pool = {}) {
   const project = String(pool?.project || '').toLowerCase();
+  if (isMorphoFamilyProject(project)) {
+    return typeof pool.apy === 'number' && pool.apy >= 1.5;
+  }
   const minApy = PROJECT_MIN_APY_THRESHOLD.get(project) ?? MIN_APY_THRESHOLD;
   return typeof pool.apy === 'number' && pool.apy >= minApy;
 }
@@ -138,12 +268,21 @@ export async function pollApyOnce() {
   try {
     const res = await fetch(defillama.url, { headers: { 'User-Agent': 'YieldNewsHub/0.1' } });
     const json = await res.json();
-    const pools = json?.data || [];
+    const pools = Array.isArray(json?.data) ? json.data : [];
+    const morphoPoolsInDefillama = pools.filter((p) => isMorphoFamilyProject(p?.project)).length;
+
+    let candidatePools = pools;
+    if (morphoPoolsInDefillama < MIN_MORPHO_POOLS_FROM_DEFILLAMA) {
+      const morphoSupplementPools = await fetchMorphoSupplementPools();
+      if (morphoSupplementPools.length > 0) {
+        candidatePools = [...candidatePools, ...morphoSupplementPools];
+      }
+    }
 
     // pick direct stablecoin pools only (USDC/USDT/USDE/DAI)
     // with: whitelisted project, TVL >= $1M, APY threshold (default 3%, some core lending lower)
     // sort by apy desc, keep more rows for frontend filtering and routing
-    const filtered = pools
+    const filtered = candidatePools
       .filter((p) => isAllowedProject(p.project, p.chain))
       .filter((p) => isStableOnlyPool(p))
       .filter((p) => passesApyThreshold(p))
