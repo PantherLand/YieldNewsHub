@@ -13,6 +13,7 @@ export const DEFI_PROJECT_LINKS = {
   'moonwell': 'https://moonwell.fi/',
   'fluid': 'https://fluid.io/',
   'venus': 'https://app.venus.io/',
+  'lendle': 'https://app.lendle.xyz/',
   'autofinance': 'https://autofarm.network/',
   'autofarm': 'https://autofarm.network/',
   'wasabi': 'https://wasabi.xyz/',
@@ -27,6 +28,7 @@ export const DEFI_PROJECT_LINKS = {
   'yearn-finance': 'https://yearn.fi/',
   'convex-finance': 'https://www.convexfinance.com/',
   'pendle': 'https://app.pendle.finance/',
+  'pancakeswap': 'https://pancakeswap.finance/liquidity/pools',
 };
 
 // Prefer official app URLs for protocols where adapter URLs are often non-actionable.
@@ -43,6 +45,7 @@ const FORCE_OFFICIAL_URL_PROJECTS = new Set([
   'avantisfi',
   'goldfinch',
   'goldfinch-protocol',
+  'lendle',
 ]);
 
 // Chain-specific market URLs for protocols that support direct deep linking
@@ -88,6 +91,12 @@ const CHAIN_MARKET_URLS = {
   'venus': {
     BSC: 'https://app.venus.io/core-pool?chainId=56',
   },
+  'lendle': {
+    Mantle: 'https://app.lendle.xyz/market',
+  },
+  'pancakeswap': {
+    BSC: 'https://pancakeswap.finance/liquidity/pools',
+  },
 };
 
 // Optional manual overrides for specific pool ids (highest precision).
@@ -105,8 +114,17 @@ function isDefiLlamaPoolUrl(value) {
   return v.includes('defillama.com/yields/pool/');
 }
 
-export function officialDepositUrl(project, { chain, symbol } = {}) {
+function canonicalProjectKey(project = '') {
   const key = String(project || '').toLowerCase();
+  if (key.startsWith('morpho')) return 'morpho';
+  if (key.startsWith('venus')) return 'venus';
+  if (key.startsWith('lendle')) return 'lendle';
+  if (key.startsWith('pancakeswap')) return 'pancakeswap';
+  return key;
+}
+
+export function officialDepositUrl(project, { chain, symbol } = {}) {
+  const key = canonicalProjectKey(project);
 
   // Try chain-specific URL first
   if (chain && CHAIN_MARKET_URLS[key]?.[chain]) {
@@ -128,7 +146,7 @@ export function getBestDepositUrl({ poolId, project, chain, symbol, adapterUrl }
   const override = poolId ? POOL_LINK_OVERRIDES[String(poolId)] : null;
   if (isHttpUrl(override)) return override;
 
-  const projectKey = String(project || '').toLowerCase();
+  const projectKey = canonicalProjectKey(project);
   const official = officialDepositUrl(project, { chain, symbol });
 
   if (FORCE_OFFICIAL_URL_PROJECTS.has(projectKey) && isHttpUrl(official)) {

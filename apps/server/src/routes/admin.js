@@ -89,9 +89,10 @@ router.post('/jobs/news', asyncHandler(async (_req, res) => {
  * Manually trigger APY polling
  */
 router.post('/jobs/apy', asyncHandler(async (_req, res) => {
-  await pollApyOnce();
+  const result = await pollApyOnce();
   res.json(successResponse({
     message: 'APY polling completed',
+    ...result,
   }));
 }));
 

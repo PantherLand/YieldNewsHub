@@ -89,7 +89,7 @@ function App() {
 
   // Data loading functions
   async function loadApy() {
-    const data = await fetchApyData(50);
+    const data = await fetchApyData(60);
     setApy(data);
   }
 

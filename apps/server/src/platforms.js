@@ -75,6 +75,18 @@ export const PLATFORM_META = {
     logoUrl: 'https://icons.llama.fi/venus.jpg',
     homeUrl: 'https://app.venus.io/',
   },
+  lendle: {
+    name: 'Lendle',
+    logoKey: 'lendle',
+    logoUrl: 'https://icons.llama.fi/lendle.jpg',
+    homeUrl: 'https://app.lendle.xyz/',
+  },
+  pancakeswap: {
+    name: 'PancakeSwap',
+    logoKey: 'pancakeswap',
+    logoUrl: 'https://icons.llama.fi/pancakeswap.jpg',
+    homeUrl: 'https://pancakeswap.finance/liquidity/pools',
+  },
   wasabi: {
     name: 'Wasabi',
     logoKey: 'wasabi',
@@ -223,6 +235,8 @@ export function normalizePlatformKey(provider = '') {
   if (p.includes('moonwell')) return 'moonwell';
   if (p.includes('fluid')) return 'fluid';
   if (p.includes('venus')) return 'venus';
+  if (p.includes('lendle')) return 'lendle';
+  if (p.includes('pancake')) return 'pancakeswap';
   if (p.includes('wasabi')) return 'wasabi';
   if (p.includes('curve')) return 'curve';
   if (p.includes('yearn')) return 'yearn';
