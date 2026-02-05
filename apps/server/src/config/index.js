@@ -1,10 +1,19 @@
 // Centralized configuration for the server
 // All environment variables are accessed from this module
 
+// Build allowed origins array from environment variables
+function buildAllowedOrigins() {
+  const origins = [];
+  if (process.env.WEB_ORIGIN) origins.push(process.env.WEB_ORIGIN);
+  if (process.env.WEB_ORIGIN_TEST) origins.push(process.env.WEB_ORIGIN_TEST);
+  // If no origins specified, allow all (for local dev)
+  return origins.length > 0 ? origins : true;
+}
+
 export const config = {
   // Server
   port: Number(process.env.PORT || 8787),
-  webOrigin: process.env.WEB_ORIGIN || true,
+  webOrigin: buildAllowedOrigins(),
 
   // Cron schedules
   cron: {
@@ -25,6 +34,17 @@ export const config = {
     defaultLimit: 50,
     maxStrategyTop: 30,
     defaultStrategyTop: 10,
+  },
+
+  // APY data source constants (non-env, product-level defaults)
+  apy: {
+    sources: {
+      morphoGraphqlUrl: 'https://api.morpho.org/graphql',
+      morphoChainIds: [1, 8453],
+      venusApiBaseUrl: 'https://api.venus.io',
+      venusChainIds: [56],
+      lendleGraphqlUrl: 'https://subgraph.lendle.xyz/graphql',
+    },
   },
 };
 
