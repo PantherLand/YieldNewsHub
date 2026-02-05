@@ -12,7 +12,6 @@ import { analyzeSymbol } from '../apy-intelligence.js';
 
 const MORPHO_GRAPHQL_URL = 'https://api.morpho.org/graphql';
 const MORPHO_CHAIN_IDS = [1, 8453];
-const MIN_MORPHO_POOLS_FROM_DEFILLAMA = 3;
 
 const MORPHO_VAULTS_QUERY = `
   query MorphoVaultV2s($first: Int!, $chainIds: [Int!]) {
@@ -42,6 +41,11 @@ function inferDirectStableToken(text = '') {
   if (/(^|[^A-Z0-9])USDT([^A-Z0-9]|$)/.test(normalized)) return 'USDT';
   if (/(^|[^A-Z0-9])USDE([^A-Z0-9]|$)/.test(normalized)) return 'USDE';
   if (/(^|[^A-Z0-9])DAI([^A-Z0-9]|$)/.test(normalized)) return 'DAI';
+  // Morpho vault symbols can be wrapper-like (e.g. gtUSDCcore), so use substring fallback.
+  if (normalized.includes('USDC')) return 'USDC';
+  if (normalized.includes('USDT')) return 'USDT';
+  if (normalized.includes('USDE')) return 'USDE';
+  if (normalized.includes('DAI')) return 'DAI';
   return null;
 }
 
@@ -111,15 +115,17 @@ async function fetchMorphoSupplementPools() {
         if (!Number.isFinite(apy) || !Number.isFinite(tvlUsd)) return null;
 
         const rawSymbol = String(vault?.symbol || '').trim();
+        const rawSymbolInfo = analyzeSymbol(rawSymbol);
         const stableHint = inferDirectStableToken(`${rawSymbol} ${String(vault?.name || '')}`);
-        const symbol = rawSymbol || stableHint || 'UNKNOWN';
-        const symbolInfo = analyzeSymbol(symbol);
-        const isDirectStable = Boolean(stableHint) || symbolInfo.directStableTokens.length > 0;
+        const isDirectStable = rawSymbolInfo.directStableTokens.length > 0 || Boolean(stableHint);
         if (!isDirectStable) return null;
+        const symbol = rawSymbolInfo.directStableTokens.length > 0
+          ? rawSymbol
+          : (stableHint || rawSymbol || 'UNKNOWN');
 
         return {
           pool: `morpho-v2:${chain || 'unknown'}:${address}`,
-          project: 'morpho-v2',
+          project: 'morpho',
           chain,
           symbol,
           apy,
@@ -140,6 +146,9 @@ async function fetchMorphoSupplementPools() {
 function isStableOnlyPool(p) {
   const symbol = analyzeSymbol(p?.symbol || '');
   const project = String(p?.project || '').toLowerCase();
+  const morphoStableHint = isMorphoFamilyProject(project)
+    ? inferDirectStableToken(p?.symbol || '')
+    : null;
 
   // Some lending vault symbols include strategy/provider words (e.g. "USDC Morpho Vault"),
   // so allow trusted single-sided stablecoin vaults even if symbol isn't pure token format.
@@ -156,12 +165,12 @@ function isStableOnlyPool(p) {
     ].includes(project) || isMorphoFamilyProject(project)
   ) && (
     p?.stablecoin === true
-    && symbol.directStableTokens.length >= 1
+    && (symbol.directStableTokens.length >= 1 || Boolean(morphoStableHint))
     && String(p?.exposure || '').toLowerCase() === 'single'
     && String(p?.ilRisk || '').toLowerCase() === 'no'
   );
 
-  if (!symbol.tokens.length) return false;
+  if (!symbol.tokens.length && !morphoStableHint) return false;
   if (!symbol.pureDirectStable && !allowNamedStableVault) return false;
   if (symbol.hasVolatileToken) return false;
 
@@ -269,15 +278,10 @@ export async function pollApyOnce() {
     const res = await fetch(defillama.url, { headers: { 'User-Agent': 'YieldNewsHub/0.1' } });
     const json = await res.json();
     const pools = Array.isArray(json?.data) ? json.data : [];
-    const morphoPoolsInDefillama = pools.filter((p) => isMorphoFamilyProject(p?.project)).length;
-
-    let candidatePools = pools;
-    if (morphoPoolsInDefillama < MIN_MORPHO_POOLS_FROM_DEFILLAMA) {
-      const morphoSupplementPools = await fetchMorphoSupplementPools();
-      if (morphoSupplementPools.length > 0) {
-        candidatePools = [...candidatePools, ...morphoSupplementPools];
-      }
-    }
+    const morphoSupplementPools = await fetchMorphoSupplementPools();
+    const candidatePools = morphoSupplementPools.length > 0
+      ? [...pools, ...morphoSupplementPools]
+      : pools;
 
     // pick direct stablecoin pools only (USDC/USDT/USDE/DAI)
     // with: whitelisted project, TVL >= $1M, APY threshold (default 3%, some core lending lower)
@@ -292,11 +296,24 @@ export async function pollApyOnce() {
 
     for (const p of filtered) {
       const externalId = p.pool;
+      const project = String(p?.project || '').toLowerCase();
+      const rawSymbol = String(p?.symbol || '').trim();
+      const rawSymbolAnalysis = analyzeSymbol(rawSymbol);
+      const morphoStableHint = isMorphoFamilyProject(project)
+        ? inferDirectStableToken(rawSymbol)
+        : null;
+      const normalizedSymbol = (
+        isMorphoFamilyProject(project)
+        && morphoStableHint
+        && rawSymbolAnalysis.directStableTokens.length === 0
+      )
+        ? morphoStableHint
+        : (rawSymbol || 'UNKNOWN');
       const url = getBestDepositUrl({
         poolId: p.pool,
         project: p.project,
         chain: p.chain,
-        symbol: p.symbol,
+        symbol: normalizedSymbol,
         adapterUrl: p.url,
       });
       await prisma.apyOpportunity.upsert({
@@ -304,7 +321,7 @@ export async function pollApyOnce() {
         update: {
           provider: p.project || 'Unknown',
           chain: p.chain || null,
-          symbol: p.symbol || 'UNKNOWN',
+          symbol: normalizedSymbol,
           apy: p.apy,
           tvlUsd: p.tvlUsd ?? null,
           url,
@@ -316,7 +333,7 @@ export async function pollApyOnce() {
           externalId,
           provider: p.project || 'Unknown',
           chain: p.chain || null,
-          symbol: p.symbol || 'UNKNOWN',
+          symbol: normalizedSymbol,
           apy: p.apy,
           tvlUsd: p.tvlUsd ?? null,
           url,

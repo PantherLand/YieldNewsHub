@@ -1,6 +1,41 @@
 import { create } from 'zustand';
 import { DEFAULT_FILTERS, SORT_DIRECTIONS } from '../config/index.js';
 
+const DIRECT_STABLE_TOKENS = ['USDC', 'USDT', 'USDE', 'DAI'];
+
+function normalizeProtocolKey(item = {}) {
+  const platformKey = String(item?.platformKey || '').toLowerCase().trim();
+  if (platformKey) return platformKey;
+  return String(item?.provider || '').toLowerCase().trim() || 'unknown';
+}
+
+function extractStableToken(symbol = '') {
+  const upper = String(symbol || '').toUpperCase();
+  for (const token of DIRECT_STABLE_TOKENS) {
+    const boundaryPattern = new RegExp(`(^|[^A-Z0-9])${token}([^A-Z0-9]|$)`);
+    if (boundaryPattern.test(upper) || upper.includes(token)) return token;
+  }
+  return upper.replace(/\s+/g, '') || 'UNKNOWN';
+}
+
+function dedupeByProtocolTokenChain(items = []) {
+  const seen = new Set();
+  const result = [];
+
+  for (const item of items) {
+    const protocol = normalizeProtocolKey(item);
+    const token = extractStableToken(item?.symbol || '');
+    const chain = String(item?.chain || '').toLowerCase().trim() || 'unknown';
+    const key = `${protocol}::${token}::${chain}`;
+
+    if (seen.has(key)) continue;
+    seen.add(key);
+    result.push(item);
+  }
+
+  return result;
+}
+
 export const useApyStore = create((set, get) => ({
   // Data
   apy: [],
@@ -94,7 +129,7 @@ export const useApyStore = create((set, get) => ({
       return Number(b.tvlUsd ?? -Infinity) - Number(a.tvlUsd ?? -Infinity);
     });
 
-    return sorted;
+    return dedupeByProtocolTokenChain(sorted);
   },
 }));
 
