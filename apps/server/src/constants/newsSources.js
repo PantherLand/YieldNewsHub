@@ -1,3 +1,6 @@
+// News sources and importance keywords
+// Used for RSS feed polling and scoring
+
 export const DEFAULT_NEWS_SOURCES = [
   // === Macro/Regulatory (Low frequency, high impact) ===
   {

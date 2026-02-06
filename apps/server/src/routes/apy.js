@@ -10,8 +10,7 @@ import {
   buildPaginationMeta,
   asyncHandler,
 } from '../api-utils.js';
-import { PLATFORM_META, normalizePlatformKey, getChainMeta } from '../platforms.js';
-import { getBestDepositUrl } from '../defiLinks.js';
+import { PLATFORM_META, normalizePlatformKey, getChainMeta, getBestDepositUrl } from '../constants/index.js';
 import { analyzeApyOpportunity } from '../apy-intelligence.js';
 
 const router = Router();

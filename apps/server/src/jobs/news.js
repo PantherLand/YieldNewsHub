@@ -1,7 +1,7 @@
 import Parser from 'rss-parser';
 import fetch from 'node-fetch';
 import { prisma } from '../db.js';
-import { IMPORTANT_KEYWORDS } from '../sources.js';
+import { IMPORTANT_KEYWORDS } from '../constants/index.js';
 
 const parser = new Parser({
   // Some feeds (e.g. SEC) may require a user agent.

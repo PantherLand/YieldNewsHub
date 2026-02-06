@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { prisma } from '../db.js';
 import { successResponse, asyncHandler } from '../api-utils.js';
 import { cache } from '../cache.js';
-import { getCexLinks } from '../cexLinks.js';
+import { getCexLinks } from '../constants/index.js';
 import { refreshAllStrategies } from '../strategies/index.js';
 import { pollNewsOnce } from '../jobs/news.js';
 import { pollApyOnce } from '../jobs/apy.js';

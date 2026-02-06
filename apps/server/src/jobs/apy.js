@@ -1,73 +1,26 @@
 import fetch from 'node-fetch';
 import { prisma } from '../db.js';
-import { getBestDepositUrl } from '../defiLinks.js';
+import { getBestDepositUrl } from '../constants/index.js';
 import { analyzeSymbol } from '../apy-intelligence.js';
-import { config } from '../config/index.js';
+import { fetchAllPools, morpho, venus, lendle, inferDirectStableToken } from '../sources/index.js';
 
 // APY aggregation:
-// - DeFi: DeFiLlama yields API (no key)
+// - DeFi: DeFiLlama yields API (no key) + official protocol APIs (sources/)
 // - CeFi: links are served separately (no APY aggregation for now)
 //
 // DeFiLlama yields API:
 // https://yields.llama.fi/pools
 
-const MORPHO_GRAPHQL_URL = config.apy.sources.morphoGraphqlUrl;
-const MORPHO_CHAIN_IDS = config.apy.sources.morphoChainIds;
-const VENUS_API_BASE_URL = config.apy.sources.venusApiBaseUrl;
-const VENUS_CHAIN_IDS = config.apy.sources.venusChainIds;
-const LENDLE_GRAPHQL_URL = config.apy.sources.lendleGraphqlUrl;
-
-const MORPHO_VAULTS_QUERY = `
-  query MorphoVaultV2s($first: Int!, $chainIds: [Int!]) {
-    vaultV2s(first: $first, where: { chainId_in: $chainIds }) {
-      items {
-        address
-        symbol
-        name
-        totalAssetsUsd
-        avgNetApy
-        chain {
-          id
-          network
-        }
-      }
-    }
-  }
-`;
-
-const LENDLE_RESERVES_QUERY = `
-  query LendleReserves($first: Int!) {
-    reserves(first: $first) {
-      id
-      symbol
-      name
-      decimals
-      supplyApy
-      liquidityRate
-      totalSupplyUsd
-      tvlUsd
-      totalATokenSupply
-      availableLiquidity
-      underlyingSymbol
-      underlyingAsset
-      priceInUsd
-      price {
-        priceInUsd
-      }
-    }
-  }
-`;
-
 function isMorphoFamilyProject(project = '') {
-  return String(project || '').toLowerCase().startsWith('morpho');
+  return morpho.isFamily(project);
 }
 
 function isVenusFamilyProject(project = '') {
-  return String(project || '').toLowerCase().startsWith('venus');
+  return venus.isFamily(project);
 }
 
 function isLendleFamilyProject(project = '') {
-  return String(project || '').toLowerCase().startsWith('lendle');
+  return lendle.isFamily(project);
 }
 
 function isPancakeFamilyProject(project = '') {
@@ -94,323 +47,6 @@ function shouldNormalizeWrappedStableSymbol(project = '') {
   return isMorphoFamilyProject(project)
     || isVenusFamilyProject(project)
     || isLendleFamilyProject(project);
-}
-
-function inferDirectStableToken(text = '') {
-  const normalized = String(text || '').toUpperCase();
-  if (/(^|[^A-Z0-9])USDC([^A-Z0-9]|$)/.test(normalized)) return 'USDC';
-  if (/(^|[^A-Z0-9])USDT([^A-Z0-9]|$)/.test(normalized)) return 'USDT';
-  if (/(^|[^A-Z0-9])USDE([^A-Z0-9]|$)/.test(normalized)) return 'USDE';
-  if (/(^|[^A-Z0-9])DAI([^A-Z0-9]|$)/.test(normalized)) return 'DAI';
-  // Morpho vault symbols can be wrapper-like (e.g. gtUSDCcore), so use substring fallback.
-  if (normalized.includes('USDC')) return 'USDC';
-  if (normalized.includes('USDT')) return 'USDT';
-  if (normalized.includes('USDE')) return 'USDE';
-  if (normalized.includes('DAI')) return 'DAI';
-  return null;
-}
-
-function toNumber(value) {
-  if (value === null || value === undefined || value === '') return null;
-  if (typeof value === 'number') return Number.isFinite(value) ? value : null;
-  const cleaned = String(value).trim().replace(/,/g, '');
-  if (!cleaned) return null;
-  const parsed = Number(cleaned);
-  return Number.isFinite(parsed) ? parsed : null;
-}
-
-function normalizePercent(value) {
-  const num = toNumber(value);
-  if (num === null || num <= 0) return null;
-  // Some APIs return APY as ratio (0.0453), some as percent (4.53).
-  return num <= 1 ? num * 100 : num;
-}
-
-function venusChainName(chainId) {
-  if (Number(chainId) === 56) return 'BSC';
-  return null;
-}
-
-function pickFirstNumber(...values) {
-  for (const value of values) {
-    const num = toNumber(value);
-    if (num !== null) return num;
-  }
-  return null;
-}
-
-function pickMaxNumber(...values) {
-  const nums = values
-    .map((value) => toNumber(value))
-    .filter((value) => value !== null && value > 0 && value < 1000);
-  if (nums.length === 0) return null;
-  return Math.max(...nums);
-}
-
-function normalizeMorphoApy(rawValue) {
-  const value = Number(rawValue);
-  if (!Number.isFinite(value) || value <= 0) return null;
-
-  // Morpho API may return decimal APY (0.04) while we store percentage (4.0).
-  if (value <= 1) return value * 100;
-  return value;
-}
-
-function normalizeMorphoChain(chain = {}) {
-  const chainId = Number(chain?.id);
-  if (chainId === 1) return 'Ethereum';
-  if (chainId === 8453) return 'Base';
-
-  const network = String(chain?.network || '').toLowerCase();
-  if (network === 'mainnet' || network === 'ethereum') return 'Ethereum';
-  if (network === 'base') return 'Base';
-
-  return chain?.network || null;
-}
-
-function morphoVaultUrl(address, chainName = '') {
-  const chain = String(chainName || '').toLowerCase();
-  const network = chain === 'base' ? 'base' : 'mainnet';
-  if (address) {
-    return `https://app.morpho.org/vault?vault=${address}&network=${network}`;
-  }
-  return `https://app.morpho.org/?network=${network}`;
-}
-
-async function fetchMorphoSupplementPools() {
-  try {
-    const res = await fetch(MORPHO_GRAPHQL_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'User-Agent': 'YieldNewsHub/0.1',
-      },
-      body: JSON.stringify({
-        query: MORPHO_VAULTS_QUERY,
-        variables: { first: 500, chainIds: MORPHO_CHAIN_IDS },
-      }),
-    });
-
-    if (!res.ok) {
-      throw new Error(`morpho api request failed: ${res.status}`);
-    }
-
-    const json = await res.json();
-    if (Array.isArray(json?.errors) && json.errors.length > 0) {
-      throw new Error(json.errors[0]?.message || 'morpho api returned graphql errors');
-    }
-
-    const items = Array.isArray(json?.data?.vaultV2s?.items)
-      ? json.data.vaultV2s.items
-      : [];
-
-    return items
-      .map((vault) => {
-        const address = String(vault?.address || '').toLowerCase();
-        if (!address) return null;
-
-        const chain = normalizeMorphoChain(vault?.chain);
-        const apy = normalizeMorphoApy(vault?.avgNetApy);
-        const tvlUsd = Number(vault?.totalAssetsUsd);
-        if (!Number.isFinite(apy) || !Number.isFinite(tvlUsd)) return null;
-
-        const rawSymbol = String(vault?.symbol || '').trim();
-        const rawSymbolInfo = analyzeSymbol(rawSymbol);
-        const stableHint = inferDirectStableToken(`${rawSymbol} ${String(vault?.name || '')}`);
-        const isDirectStable = rawSymbolInfo.directStableTokens.length > 0 || Boolean(stableHint);
-        if (!isDirectStable) return null;
-        const symbol = rawSymbolInfo.directStableTokens.length > 0
-          ? rawSymbol
-          : (stableHint || rawSymbol || 'UNKNOWN');
-
-        return {
-          pool: `morpho-v2:${chain || 'unknown'}:${address}`,
-          project: 'morpho',
-          chain,
-          symbol,
-          apy,
-          tvlUsd,
-          stablecoin: true,
-          exposure: 'single',
-          ilRisk: 'no',
-          url: morphoVaultUrl(address, chain),
-        };
-      })
-      .filter(Boolean);
-  } catch (e) {
-    console.warn('[apy] morpho supplement failed', e?.message || e);
-    return [];
-  }
-}
-
-async function fetchVenusSupplementPools() {
-  const output = [];
-
-  for (const chainId of VENUS_CHAIN_IDS) {
-    const chain = venusChainName(chainId);
-    if (!chain) continue;
-
-    try {
-      const marketsUrl = new URL('/markets', VENUS_API_BASE_URL);
-      marketsUrl.searchParams.set('chainId', String(chainId));
-      marketsUrl.searchParams.set('limit', '500');
-
-      const res = await fetch(marketsUrl.toString(), {
-        headers: {
-          'User-Agent': 'YieldNewsHub/0.1',
-          'accept-version': 'stable',
-        },
-      });
-
-      if (!res.ok) {
-        throw new Error(`venus api request failed: ${res.status}`);
-      }
-
-      const json = await res.json();
-      const markets = Array.isArray(json?.result)
-        ? json.result
-        : Array.isArray(json?.data?.result)
-          ? json.data.result
-          : [];
-
-      for (const market of markets) {
-        const symbolText = `${market?.underlyingSymbol || ''} ${market?.symbol || ''} ${market?.name || ''}`;
-        const stableToken = inferDirectStableToken(symbolText);
-        if (!stableToken) continue;
-
-        // Venus payloads may carry multiple supply APY fields; pick the highest base supply APY.
-        const apy = pickMaxNumber(
-          normalizePercent(market?.supplyApy),
-          normalizePercent(market?.supplyApyV3),
-          normalizePercent(market?.supplyApyV2),
-          normalizePercent(market?.apy),
-          normalizePercent(market?.supplyRate),
-        );
-        if (apy === null) continue;
-
-        const liquidityCents = toNumber(market?.liquidityCents);
-        const tvlUsd = liquidityCents !== null
-          ? liquidityCents / 100
-          : pickFirstNumber(market?.tvlUsd, market?.totalSupplyUsd, market?.liquidityUsd);
-        if (tvlUsd === null || tvlUsd <= 0) continue;
-
-        const marketAddress = String(
-          market?.vTokenAddress
-            || market?.address
-            || market?.id
-            || ''
-        ).toLowerCase();
-
-        output.push({
-          pool: `venus:${chain.toLowerCase()}:${marketAddress || stableToken.toLowerCase()}`,
-          project: 'venus',
-          chain,
-          symbol: stableToken,
-          apy,
-          tvlUsd,
-          stablecoin: true,
-          exposure: 'single',
-          ilRisk: 'no',
-          url: 'https://app.venus.io/core-pool?chainId=56',
-        });
-      }
-    } catch (e) {
-      console.warn(`[apy] venus supplement failed (chainId=${chainId})`, e?.message || e);
-    }
-  }
-
-  return output;
-}
-
-function lendleApyFromReserve(reserve = {}) {
-  const direct = normalizePercent(reserve?.supplyApy);
-  if (direct !== null) return direct;
-
-  const rateRay = toNumber(reserve?.liquidityRate);
-  if (rateRay !== null && rateRay > 0) {
-    // Aave-style ray annual rate: 1e27 = 100%.
-    return rateRay / 1e25;
-  }
-
-  return null;
-}
-
-function lendleTvlFromReserve(reserve = {}) {
-  const direct = pickFirstNumber(
-    reserve?.tvlUsd,
-    reserve?.totalSupplyUsd,
-    reserve?.totalLiquidityUsd
-  );
-  if (direct !== null && direct > 0) return direct;
-
-  const totalSupply = pickFirstNumber(reserve?.totalATokenSupply, reserve?.availableLiquidity);
-  const decimals = toNumber(reserve?.decimals);
-  const price = pickFirstNumber(reserve?.priceInUsd, reserve?.price?.priceInUsd);
-  if (totalSupply === null || decimals === null || price === null) return null;
-
-  return (totalSupply / (10 ** decimals)) * price;
-}
-
-async function fetchLendleSupplementPools() {
-  try {
-    const res = await fetch(LENDLE_GRAPHQL_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'User-Agent': 'YieldNewsHub/0.1',
-      },
-      body: JSON.stringify({
-        query: LENDLE_RESERVES_QUERY,
-        variables: { first: 300 },
-      }),
-    });
-
-    if (!res.ok) {
-      throw new Error(`lendle graphql request failed: ${res.status}`);
-    }
-
-    const json = await res.json();
-    if (Array.isArray(json?.errors) && json.errors.length > 0) {
-      throw new Error(json.errors[0]?.message || 'lendle graphql returned errors');
-    }
-
-    const reserves = Array.isArray(json?.data?.reserves) ? json.data.reserves : [];
-    return reserves
-      .map((reserve) => {
-        const stableToken = inferDirectStableToken(
-          `${reserve?.underlyingSymbol || ''} ${reserve?.symbol || ''} ${reserve?.name || ''}`
-        );
-        if (!stableToken) return null;
-
-        const apy = lendleApyFromReserve(reserve);
-        const tvlUsd = lendleTvlFromReserve(reserve);
-        if (apy === null || tvlUsd === null || tvlUsd <= 0) return null;
-
-        const reserveId = String(
-          reserve?.underlyingAsset
-            || reserve?.id
-            || reserve?.symbol
-            || stableToken
-        ).toLowerCase();
-
-        return {
-          pool: `lendle:mantle:${reserveId}`,
-          project: 'lendle',
-          chain: 'Mantle',
-          symbol: stableToken,
-          apy,
-          tvlUsd,
-          stablecoin: true,
-          exposure: 'single',
-          ilRisk: 'no',
-          url: 'https://app.lendle.xyz/market',
-        };
-      })
-      .filter(Boolean);
-  } catch (e) {
-    console.warn('[apy] lendle supplement failed', e?.message || e);
-    return [];
-  }
 }
 
 function isStableOnlyPool(p) {
@@ -451,8 +87,6 @@ function isStableOnlyPool(p) {
 
   return true;
 }
-
-// CeFi links are handled separately (see src/cexLinks.js)
 
 function riskNoteFromPool(p) {
   // Extremely naive; for MVP we just label by category.
@@ -601,19 +235,23 @@ export async function pollApyOnce() {
   }
 
   try {
-    const res = await fetch(defillama.url, { headers: { 'User-Agent': 'YieldNewsHub/0.1' } });
-    const json = await res.json();
-    const pools = Array.isArray(json?.data) ? json.data : [];
-    const morphoSupplementPools = await fetchMorphoSupplementPools();
-    const venusSupplementPools = await fetchVenusSupplementPools();
-    const lendleSupplementPools = await fetchLendleSupplementPools();
+    // Fetch data from all sources in parallel
+    const [defillamaRes, officialPools] = await Promise.all([
+      fetch(defillama.url, { headers: { 'User-Agent': 'YieldNewsHub/0.1' } }).then(r => r.json()),
+      fetchAllPools(),
+    ]);
+
+    const pools = Array.isArray(defillamaRes?.data) ? defillamaRes.data : [];
+    const morphoSupplementPools = officialPools.morpho || [];
+    const venusSupplementPools = officialPools.venus || [];
+    const lendleSupplementPools = officialPools.lendle || [];
 
     // If official pools are available, drop stale aggregator rows for same family.
     if (morphoSupplementPools.length > 0) {
       await prisma.apyOpportunity.deleteMany({
         where: {
           provider: { startsWith: 'morpho', mode: 'insensitive' },
-          externalId: { not: { startsWith: 'morpho-v2:' } },
+          externalId: { not: { startsWith: morpho.poolIdPrefix } },
         },
       });
     }
@@ -621,7 +259,7 @@ export async function pollApyOnce() {
       await prisma.apyOpportunity.deleteMany({
         where: {
           provider: { startsWith: 'venus', mode: 'insensitive' },
-          externalId: { not: { startsWith: 'venus:' } },
+          externalId: { not: { startsWith: venus.poolIdPrefix } },
         },
       });
     }
@@ -629,7 +267,7 @@ export async function pollApyOnce() {
       await prisma.apyOpportunity.deleteMany({
         where: {
           provider: { startsWith: 'lendle', mode: 'insensitive' },
-          externalId: { not: { startsWith: 'lendle:' } },
+          externalId: { not: { startsWith: lendle.poolIdPrefix } },
         },
       });
     }

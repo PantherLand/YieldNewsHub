@@ -1,4 +1,5 @@
-// Simple platform metadata mapping used by the API response.
+// Platform and Chain metadata constants
+// Used for displaying logos, names, and URLs in the API response
 // logoKey refers to local SVG in apps/web/public/logos/
 // logoUrl is used as fallback when no local logo exists
 

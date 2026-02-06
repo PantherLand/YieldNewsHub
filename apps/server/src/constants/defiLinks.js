@@ -1,3 +1,4 @@
+// DeFi protocol deposit page links
 // Map DeFiLlama `project` identifiers to official deposit pages.
 // If a project isn't mapped, we fall back to the DeFiLlama pool page.
 
@@ -32,7 +33,7 @@ export const DEFI_PROJECT_LINKS = {
 };
 
 // Prefer official app URLs for protocols where adapter URLs are often non-actionable.
-const FORCE_OFFICIAL_URL_PROJECTS = new Set([
+export const FORCE_OFFICIAL_URL_PROJECTS = new Set([
   'maple',
   'maple-finance',
   'moonwell',
@@ -49,7 +50,7 @@ const FORCE_OFFICIAL_URL_PROJECTS = new Set([
 ]);
 
 // Chain-specific market URLs for protocols that support direct deep linking
-const CHAIN_MARKET_URLS = {
+export const CHAIN_MARKET_URLS = {
   'aave-v3': {
     Ethereum: 'https://app.aave.com/?marketName=proto_mainnet_v3',
     Arbitrum: 'https://app.aave.com/?marketName=proto_arbitrum_v3',
@@ -102,7 +103,7 @@ const CHAIN_MARKET_URLS = {
 // Optional manual overrides for specific pool ids (highest precision).
 // Example:
 //   '57f95d9e-...' : 'https://app.protocol.xyz/deposit?market=usdc'
-const POOL_LINK_OVERRIDES = {};
+export const POOL_LINK_OVERRIDES = {};
 
 function isHttpUrl(value) {
   const v = String(value || '').trim();

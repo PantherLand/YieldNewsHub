@@ -1,5 +1,5 @@
 import { prisma } from './db.js';
-import { DEFAULT_NEWS_SOURCES } from './sources.js';
+import { DEFAULT_NEWS_SOURCES } from './constants/index.js';
 
 /**
  * Ensure seed data exists in the database
