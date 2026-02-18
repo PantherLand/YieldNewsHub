@@ -1,30 +1,30 @@
 import { theme } from './theme.js';
 
-// Common styles with Cyberpunk theme
+// Common styles with Monochrome + Neon Purple Cyberpunk theme
 export const styles = {
   container: {
     fontFamily: theme.fonts.sans,
     minHeight: '100vh',
-    background: theme.colors.gradientDark,
+    background: theme.colors.bgDeep,
     color: theme.colors.textPrimary,
     padding: theme.spacing.md,
     position: 'relative',
     overflow: 'hidden',
   },
 
-  // Cyberpunk glow overlay
+  // Subtle glow overlay
   glowOverlay: {
     position: 'fixed',
     top: 0,
     left: 0,
     right: 0,
-    height: '500px',
+    height: '600px',
     background: theme.colors.gradientGlow,
     pointerEvents: 'none',
     zIndex: 0,
   },
 
-  // Scanline effect
+  // Subtle scanline effect
   scanlines: {
     position: 'fixed',
     top: 0,
@@ -35,11 +35,12 @@ export const styles = {
       0deg,
       transparent,
       transparent 2px,
-      rgba(168, 85, 247, 0.02) 2px,
-      rgba(168, 85, 247, 0.02) 4px
+      ${theme.colors.scanline} 2px,
+      ${theme.colors.scanline} 4px
     )`,
     pointerEvents: 'none',
     zIndex: 1,
+    opacity: 0.5,
   },
 
   // Grid pattern
@@ -50,16 +51,17 @@ export const styles = {
     right: 0,
     bottom: 0,
     backgroundImage: `
-      linear-gradient(rgba(168, 85, 247, 0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(168, 85, 247, 0.03) 1px, transparent 1px)
+      linear-gradient(${theme.colors.border} 1px, transparent 1px),
+      linear-gradient(90deg, ${theme.colors.border} 1px, transparent 1px)
     `,
-    backgroundSize: '50px 50px',
+    backgroundSize: '60px 60px',
     pointerEvents: 'none',
     zIndex: 0,
+    opacity: 0.3,
   },
 
   content: {
-    maxWidth: '1280px',
+    maxWidth: '1400px',
     margin: '0 auto',
     position: 'relative',
     zIndex: 2,
@@ -95,26 +97,26 @@ export const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    filter: 'drop-shadow(0 0 10px rgba(168, 85, 247, 0.5))',
+    filter: `drop-shadow(0 0 12px ${theme.colors.accentMuted})`,
   },
 
   title: {
     fontSize: '28px',
-    fontWeight: 800,
+    fontWeight: 700,
     background: theme.colors.gradientPrimary,
     WebkitBackgroundClip: 'text',
     WebkitTextFillColor: 'transparent',
     backgroundClip: 'text',
     margin: 0,
     letterSpacing: '-0.5px',
-    textShadow: '0 0 30px rgba(168, 85, 247, 0.3)',
   },
 
   subtitle: {
-    color: theme.colors.textSecondary,
+    color: theme.colors.textMuted,
     fontSize: '13px',
     marginTop: '4px',
     letterSpacing: '0.5px',
+    textTransform: 'uppercase',
   },
 
   nav: {
@@ -132,12 +134,12 @@ export const styles = {
     borderRadius: theme.radius.md,
     border: 'none',
     background: active ? theme.colors.gradientPrimary : 'transparent',
-    color: active ? '#fff' : theme.colors.textSecondary,
+    color: active ? theme.colors.textPrimary : theme.colors.textSecondary,
     cursor: 'pointer',
     fontSize: '13px',
     fontWeight: 600,
     transition: theme.transition.fast,
-    boxShadow: active ? theme.colors.glowPurple : 'none',
+    boxShadow: active ? theme.colors.glowAccentSubtle : 'none',
     letterSpacing: '0.3px',
   }),
 
@@ -163,17 +165,22 @@ export const styles = {
     borderRadius: theme.radius.lg,
     backdropFilter: 'blur(16px)',
     overflow: 'hidden',
-    boxShadow: '0 4px 24px rgba(0, 0, 0, 0.3)',
+    boxShadow: theme.shadows.lg,
+  },
+
+  cardHover: {
+    background: theme.colors.bgCardHover,
+    borderColor: theme.colors.borderAccent,
+    boxShadow: `${theme.shadows.lg}, ${theme.colors.glowAccentSubtle}`,
   },
 
   error: {
     padding: theme.spacing.md,
-    background: 'rgba(255, 51, 102, 0.1)',
-    border: `1px solid ${theme.colors.borderPink}`,
+    background: theme.colors.errorMuted,
+    border: `1px solid rgba(239, 68, 68, 0.3)`,
     borderRadius: theme.radius.md,
-    color: theme.colors.neonRed,
+    color: theme.colors.error,
     marginBottom: theme.spacing.lg,
-    boxShadow: '0 0 20px rgba(255, 51, 102, 0.1)',
   },
 
   footer: {
@@ -192,34 +199,34 @@ export const styles = {
   badge: (variant = 'default') => {
     const variants = {
       default: {
-        background: 'rgba(100, 116, 139, 0.15)',
+        background: theme.colors.gray800,
         color: theme.colors.textSecondary,
-        border: '1px solid rgba(100, 116, 139, 0.2)',
+        border: `1px solid ${theme.colors.border}`,
       },
       primary: {
         background: 'rgba(168, 85, 247, 0.15)',
-        color: theme.colors.cyberPurpleLight,
-        border: `1px solid ${theme.colors.border}`,
+        color: theme.colors.accentLight,
+        border: `1px solid ${theme.colors.borderAccent}`,
       },
       success: {
-        background: 'rgba(0, 255, 136, 0.1)',
-        color: theme.colors.neonGreen,
-        border: '1px solid rgba(0, 255, 136, 0.2)',
+        background: theme.colors.successMuted,
+        color: theme.colors.success,
+        border: '1px solid rgba(34, 197, 94, 0.3)',
       },
       warning: {
-        background: 'rgba(255, 136, 0, 0.1)',
-        color: theme.colors.neonOrange,
-        border: '1px solid rgba(255, 136, 0, 0.2)',
+        background: theme.colors.warningMuted,
+        color: theme.colors.warning,
+        border: '1px solid rgba(245, 158, 11, 0.3)',
       },
-      pink: {
-        background: 'rgba(255, 0, 122, 0.1)',
-        color: theme.colors.neonPink,
-        border: `1px solid ${theme.colors.borderPink}`,
+      error: {
+        background: theme.colors.errorMuted,
+        color: theme.colors.error,
+        border: '1px solid rgba(239, 68, 68, 0.3)',
       },
-      cyan: {
-        background: 'rgba(6, 182, 212, 0.1)',
-        color: theme.colors.electricCyanLight,
-        border: `1px solid ${theme.colors.borderCyan}`,
+      accent: {
+        background: theme.colors.infoMuted,
+        color: theme.colors.accent,
+        border: `1px solid ${theme.colors.borderAccent}`,
       },
     };
     return {
@@ -231,6 +238,162 @@ export const styles = {
       transition: theme.transition.fast,
       ...variants[variant],
     };
+  },
+
+  // Button variants
+  button: {
+    base: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: theme.spacing.sm,
+      padding: '10px 20px',
+      fontSize: '14px',
+      fontWeight: 600,
+      borderRadius: theme.radius.md,
+      border: 'none',
+      cursor: 'pointer',
+      transition: theme.transition.fast,
+    },
+    primary: {
+      background: theme.colors.gradientPrimary,
+      color: theme.colors.textPrimary,
+      boxShadow: theme.shadows.accent,
+    },
+    secondary: {
+      background: theme.colors.gray800,
+      color: theme.colors.textPrimary,
+      border: `1px solid ${theme.colors.border}`,
+    },
+    ghost: {
+      background: 'transparent',
+      color: theme.colors.textSecondary,
+    },
+    outline: {
+      background: 'transparent',
+      color: theme.colors.accent,
+      border: `1px solid ${theme.colors.borderAccent}`,
+    },
+  },
+
+  // Input styles
+  input: {
+    base: {
+      width: '100%',
+      padding: '12px 16px',
+      fontSize: '14px',
+      background: theme.colors.bgInput,
+      border: `1px solid ${theme.colors.border}`,
+      borderRadius: theme.radius.md,
+      color: theme.colors.textPrimary,
+      transition: theme.transition.fast,
+      outline: 'none',
+    },
+    focus: {
+      borderColor: theme.colors.borderAccent,
+      boxShadow: `0 0 0 3px ${theme.colors.infoMuted}`,
+    },
+  },
+
+  // Table styles
+  table: {
+    container: {
+      width: '100%',
+      overflowX: 'auto',
+    },
+    base: {
+      width: '100%',
+      borderCollapse: 'collapse',
+    },
+    header: {
+      background: theme.colors.bgSurface,
+      borderBottom: `1px solid ${theme.colors.border}`,
+    },
+    headerCell: {
+      padding: '14px 16px',
+      fontSize: '12px',
+      fontWeight: 600,
+      color: theme.colors.textMuted,
+      textTransform: 'uppercase',
+      letterSpacing: '0.5px',
+      textAlign: 'left',
+    },
+    row: {
+      borderBottom: `1px solid ${theme.colors.borderSubtle}`,
+      transition: theme.transition.fast,
+    },
+    rowHover: {
+      background: theme.colors.bgCardHover,
+    },
+    cell: {
+      padding: '16px',
+      fontSize: '14px',
+      color: theme.colors.textPrimary,
+    },
+  },
+
+  // Stat card
+  statCard: {
+    container: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: theme.spacing.xs,
+      padding: theme.spacing.lg,
+      background: theme.colors.bgCard,
+      borderRadius: theme.radius.lg,
+      border: `1px solid ${theme.colors.border}`,
+    },
+    label: {
+      fontSize: '12px',
+      color: theme.colors.textMuted,
+      textTransform: 'uppercase',
+      letterSpacing: '0.5px',
+    },
+    value: {
+      fontSize: '28px',
+      fontWeight: 700,
+      color: theme.colors.textPrimary,
+    },
+    valueAccent: {
+      fontSize: '28px',
+      fontWeight: 700,
+      color: theme.colors.accent,
+    },
+    change: (positive) => ({
+      fontSize: '13px',
+      color: positive ? theme.colors.success : theme.colors.error,
+    }),
+  },
+
+  // Skeleton loading
+  skeleton: {
+    base: {
+      background: `linear-gradient(90deg, ${theme.colors.gray800} 0%, ${theme.colors.gray700} 50%, ${theme.colors.gray800} 100%)`,
+      backgroundSize: '200% 100%',
+      animation: 'shimmer 1.5s infinite',
+      borderRadius: theme.radius.md,
+    },
+  },
+
+  // Divider
+  divider: {
+    width: '100%',
+    height: '1px',
+    background: theme.colors.border,
+    margin: `${theme.spacing.lg} 0`,
+  },
+
+  // Link
+  link: {
+    color: theme.colors.accent,
+    textDecoration: 'none',
+    transition: theme.transition.fast,
+    cursor: 'pointer',
+  },
+
+  linkHover: {
+    color: theme.colors.accentLight,
+    textDecoration: 'underline',
   },
 };
 
