@@ -16,6 +16,10 @@ A Web3 dashboard for:
   - News: every 5 minutes
   - APY: hourly
 
+## Live Demo
+
+https://yieldnewshub-production.up.railway.app/
+
 ## Quickstart (local)
 
 ### 1) Start Postgres
