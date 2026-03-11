@@ -3,9 +3,12 @@
  * Provides in-memory caching with configurable TTL
  */
 
+import { config } from './config/index.js';
+
 class CacheService {
   constructor() {
     this.store = new Map();
+    this.setOps = 0;
   }
 
   /**
@@ -39,6 +42,11 @@ class CacheService {
       expiresAt: now + ttlMs,
       cachedAt: now,
     });
+
+    this.setOps += 1;
+    if (this.setOps % config.cache.sweepEverySetOps === 0) {
+      this.sweepExpired(now);
+    }
   }
 
   /**
@@ -54,6 +62,22 @@ class CacheService {
    */
   clear() {
     this.store.clear();
+  }
+
+  /**
+   * Remove all expired entries from cache
+   * @param {number} now
+   * @returns {number} removed count
+   */
+  sweepExpired(now = Date.now()) {
+    let removed = 0;
+    for (const [key, entry] of this.store.entries()) {
+      if (now > entry.expiresAt) {
+        this.store.delete(key);
+        removed += 1;
+      }
+    }
+    return removed;
   }
 
   /**

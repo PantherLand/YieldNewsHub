@@ -9,6 +9,24 @@ function getPositiveInteger(value, fallback) {
   return normalized;
 }
 
+function getNullablePositiveInteger(value) {
+  if (value === undefined || value === null || value === '') return null;
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return null;
+  const normalized = Math.floor(parsed);
+  if (normalized <= 0) return null;
+  return normalized;
+}
+
+function getBoolean(value, fallback) {
+  if (value === undefined || value === null || value === '') return fallback;
+  if (typeof value === 'boolean') return value;
+  const normalized = String(value).trim().toLowerCase();
+  if (['1', 'true', 'yes', 'on'].includes(normalized)) return true;
+  if (['0', 'false', 'no', 'off'].includes(normalized)) return false;
+  return fallback;
+}
+
 // Build allowed origins array from environment variables
 function buildAllowedOrigins() {
   const origins = [];
@@ -29,6 +47,7 @@ export const config = {
     apy: process.env.APY_POLL_CRON || '0 * * * *',
     cache: process.env.CACHE_REFRESH_CRON || '0 * * * *',
     memoryLog: process.env.MEMORY_LOG_CRON || '*/5 * * * *',
+    cacheSweep: process.env.CACHE_SWEEP_CRON || '*/10 * * * *',
   },
 
   // Network request settings
@@ -41,6 +60,18 @@ export const config = {
   cache: {
     cexLinksTtl: 60 * 60_000, // 1 hour
     strategyWarmupDelay: 5000, // 5 seconds
+    sweepEverySetOps: getPositiveInteger(process.env.CACHE_SWEEP_EVERY_SET_OPS, 200),
+  },
+
+  // Startup toggles
+  startup: {
+    runInitialFetch: getBoolean(process.env.RUN_INITIAL_FETCH, true),
+    runStrategyWarmup: getBoolean(process.env.RUN_STRATEGY_WARMUP, true),
+  },
+
+  // Runtime monitoring thresholds
+  monitoring: {
+    rssExitThresholdMb: getNullablePositiveInteger(process.env.RSS_EXIT_THRESHOLD_MB),
   },
 
   // API limits

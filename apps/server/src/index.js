@@ -29,7 +29,33 @@ app.use(
 );
 
 // Health check
-app.get('/healthz', (_req, res) => res.json({ success: true, data: { ok: true } }));
+app.get('/healthz', (_req, res) => {
+  const rssBytes = process.memoryUsage().rss;
+  const rssMb = Number((rssBytes / (1024 * 1024)).toFixed(1));
+  const thresholdMb = config.monitoring.rssExitThresholdMb;
+  const overThreshold = Number.isFinite(thresholdMb) && rssMb >= thresholdMb;
+
+  if (overThreshold) {
+    return res.status(507).json({
+      success: false,
+      data: {
+        ok: false,
+        reason: 'rss_threshold_exceeded',
+        rssMb,
+        thresholdMb,
+      },
+    });
+  }
+
+  return res.json({
+    success: true,
+    data: {
+      ok: true,
+      rssMb,
+      thresholdMb,
+    },
+  });
+});
 
 // API Routes
 app.use('/api/news', newsRoutes);

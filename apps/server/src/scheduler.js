@@ -4,6 +4,7 @@ import { pollNewsOnce } from './jobs/news.js';
 import { pollApyOnce } from './jobs/apy.js';
 import { pushTelegram } from './telegram.js';
 import { refreshAllStrategies } from './strategies/index.js';
+import { cache } from './cache.js';
 
 const runningJobs = new Set();
 
@@ -13,10 +14,12 @@ function formatMemoryMb(bytes = 0) {
 
 function logMemoryUsage() {
   const memory = process.memoryUsage();
+  const cacheStats = cache.stats();
   console.log(
     `[memory] rss=${formatMemoryMb(memory.rss)} heapUsed=${formatMemoryMb(memory.heapUsed)} `
       + `heapTotal=${formatMemoryMb(memory.heapTotal)} external=${formatMemoryMb(memory.external)} `
-      + `arrayBuffers=${formatMemoryMb(memory.arrayBuffers)} uptime=${Math.floor(process.uptime())}s`
+      + `arrayBuffers=${formatMemoryMb(memory.arrayBuffers)} uptime=${Math.floor(process.uptime())}s `
+      + `cacheTotal=${cacheStats.total} cacheValid=${cacheStats.valid} cacheExpired=${cacheStats.expired}`
   );
 }
 
@@ -82,11 +85,22 @@ export function startScheduler() {
     });
   });
 
+  // Cache sweep job
+  cron.schedule(config.cron.cacheSweep, async () => {
+    await runExclusiveJob('cache-sweep', async () => {
+      const removed = cache.sweepExpired();
+      if (removed > 0) {
+        console.log(`[cache] Swept ${removed} expired entries`);
+      }
+    });
+  });
+
   console.log('[scheduler] Cron jobs scheduled:');
   console.log(`  - News polling: ${config.cron.news}`);
   console.log(`  - APY polling: ${config.cron.apy}`);
   console.log(`  - Cache refresh: ${config.cron.cache}`);
   console.log(`  - Memory log: ${config.cron.memoryLog}`);
+  console.log(`  - Cache sweep: ${config.cron.cacheSweep}`);
   logMemoryUsage();
 }
 
@@ -94,11 +108,21 @@ export function startScheduler() {
  * Run initial data fetch at startup
  */
 export async function runInitialFetch() {
+  if (!config.startup.runInitialFetch) {
+    console.log('[scheduler] Initial fetch disabled by RUN_INITIAL_FETCH=false');
+    return;
+  }
+
   // Kick once at boot
   runExclusiveJob('news-poll', () => pollNewsOnce()).catch(() => {});
   runExclusiveJob('apy-poll', () => pollApyOnce()).catch(() => {});
 
   // Initial cache warm-up (run after APY data loads)
+  if (!config.startup.runStrategyWarmup) {
+    console.log('[scheduler] Strategy warm-up disabled by RUN_STRATEGY_WARMUP=false');
+    return;
+  }
+
   setTimeout(() => {
     runExclusiveJob('cache-refresh', () => refreshAllStrategies())
       .then((resultsWrapper) => {
