@@ -1,8 +1,8 @@
-import fetch from 'node-fetch';
 import { prisma } from '../db.js';
 import { getBestDepositUrl } from '../constants/index.js';
 import { analyzeSymbol } from '../apy-intelligence.js';
 import { fetchAllPools, morpho, venus, lendle, inferDirectStableToken } from '../sources/index.js';
+import { fetchJsonWithTimeout } from '../http.js';
 
 // APY aggregation:
 // - DeFi: DeFiLlama yields API (no key) + official protocol APIs (sources/)
@@ -237,7 +237,7 @@ export async function pollApyOnce() {
   try {
     // Fetch data from all sources in parallel
     const [defillamaRes, officialPools] = await Promise.all([
-      fetch(defillama.url, { headers: { 'User-Agent': 'YieldNewsHub/0.1' } }).then(r => r.json()),
+      fetchJsonWithTimeout(defillama.url, { headers: { 'User-Agent': 'YieldNewsHub/0.1' } }),
       fetchAllPools(),
     ]);
 

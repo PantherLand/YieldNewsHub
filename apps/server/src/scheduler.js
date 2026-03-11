@@ -5,42 +5,89 @@ import { pollApyOnce } from './jobs/apy.js';
 import { pushTelegram } from './telegram.js';
 import { refreshAllStrategies } from './strategies/index.js';
 
+const runningJobs = new Set();
+
+function formatMemoryMb(bytes = 0) {
+  return `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
+}
+
+function logMemoryUsage() {
+  const memory = process.memoryUsage();
+  console.log(
+    `[memory] rss=${formatMemoryMb(memory.rss)} heapUsed=${formatMemoryMb(memory.heapUsed)} `
+      + `heapTotal=${formatMemoryMb(memory.heapTotal)} external=${formatMemoryMb(memory.external)} `
+      + `arrayBuffers=${formatMemoryMb(memory.arrayBuffers)} uptime=${Math.floor(process.uptime())}s`
+  );
+}
+
+async function runExclusiveJob(jobName, jobFn) {
+  if (runningJobs.has(jobName)) {
+    console.warn(`[scheduler] Skip ${jobName}: previous run still in progress`);
+    return { skipped: true };
+  }
+
+  runningJobs.add(jobName);
+  const startedAt = Date.now();
+  try {
+    const result = await jobFn();
+    const elapsedMs = Date.now() - startedAt;
+    console.log(`[scheduler] ${jobName} completed in ${elapsedMs}ms`);
+    return { skipped: false, result };
+  } catch (error) {
+    console.error(`[scheduler] ${jobName} failed:`, error?.message || error);
+    return { skipped: false, error: error?.message || String(error) };
+  } finally {
+    runningJobs.delete(jobName);
+  }
+}
+
 /**
  * Start all scheduled jobs
  */
 export function startScheduler() {
   // News polling job
   cron.schedule(config.cron.news, async () => {
-    await pollNewsOnce({
-      pushFn: async ({ title, url, score }) => {
-        // Push to default telegram only if configured
-        await pushTelegram(`📰 ${title}\nscore=${score}\n${url}`);
-      },
+    await runExclusiveJob('news-poll', async () => {
+      await pollNewsOnce({
+        pushFn: async ({ title, url, score }) => {
+          // Push to default telegram only if configured
+          await pushTelegram(`📰 ${title}\nscore=${score}\n${url}`);
+        },
+      });
     });
   });
 
   // APY data polling job
   cron.schedule(config.cron.apy, async () => {
-    await pollApyOnce();
+    await runExclusiveJob('apy-poll', async () => {
+      await pollApyOnce();
+    });
   });
 
   // Cache refresh job - runs after APY data is updated
   cron.schedule(config.cron.cache, async () => {
-    console.log('[cache] Refreshing strategy caches...');
-    try {
+    await runExclusiveJob('cache-refresh', async () => {
+      console.log('[cache] Refreshing strategy caches...');
       const results = await refreshAllStrategies();
       const succeeded = results.filter(r => r.success).length;
       const failed = results.filter(r => !r.success).length;
       console.log(`[cache] Strategy cache refresh completed: ${succeeded} succeeded, ${failed} failed`);
-    } catch (error) {
-      console.error('[cache] Strategy cache refresh failed:', error.message);
-    }
+    });
+  });
+
+  // Memory usage log job
+  cron.schedule(config.cron.memoryLog, async () => {
+    await runExclusiveJob('memory-log', async () => {
+      logMemoryUsage();
+    });
   });
 
   console.log('[scheduler] Cron jobs scheduled:');
   console.log(`  - News polling: ${config.cron.news}`);
   console.log(`  - APY polling: ${config.cron.apy}`);
   console.log(`  - Cache refresh: ${config.cron.cache}`);
+  console.log(`  - Memory log: ${config.cron.memoryLog}`);
+  logMemoryUsage();
 }
 
 /**
@@ -48,13 +95,15 @@ export function startScheduler() {
  */
 export async function runInitialFetch() {
   // Kick once at boot
-  pollNewsOnce().catch(() => {});
-  pollApyOnce().catch(() => {});
+  runExclusiveJob('news-poll', () => pollNewsOnce()).catch(() => {});
+  runExclusiveJob('apy-poll', () => pollApyOnce()).catch(() => {});
 
   // Initial cache warm-up (run after APY data loads)
   setTimeout(() => {
-    refreshAllStrategies()
-      .then(results => {
+    runExclusiveJob('cache-refresh', () => refreshAllStrategies())
+      .then((resultsWrapper) => {
+        if (resultsWrapper?.skipped || !Array.isArray(resultsWrapper?.result)) return;
+        const results = resultsWrapper.result;
         const succeeded = results.filter(r => r.success).length;
         console.log(`[cache] Initial cache warm-up completed: ${succeeded} strategies cached`);
       })

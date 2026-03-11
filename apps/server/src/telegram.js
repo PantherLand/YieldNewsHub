@@ -1,5 +1,5 @@
-import fetch from 'node-fetch';
 import { prisma } from './db.js';
+import { fetchWithTimeout } from './http.js';
 
 export async function getTelegramIntegration() {
   // Prefer DB-configured integration; fall back to env.
@@ -17,7 +17,7 @@ export async function pushTelegram(text) {
   if (!integ) return { ok: false, reason: 'no_telegram_integration' };
 
   const url = `https://api.telegram.org/bot${integ.botToken}/sendMessage`;
-  const res = await fetch(url, {
+  const res = await fetchWithTimeout(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ chat_id: integ.chatId, text, disable_web_page_preview: true }),

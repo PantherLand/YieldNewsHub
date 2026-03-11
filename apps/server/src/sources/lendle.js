@@ -1,9 +1,9 @@
 // Lendle Protocol API integration (Mantle chain)
 // Docs: https://subgraph.lendle.xyz/graphql
 
-import fetch from 'node-fetch';
 import { config } from '../config/index.js';
 import { toNumber, normalizePercent, pickFirstNumber, inferDirectStableToken } from './common.js';
+import { fetchJsonWithTimeout } from '../http.js';
 
 const GRAPHQL_URL = config.apy.sources.lendleGraphqlUrl;
 
@@ -65,7 +65,7 @@ function tvlFromReserve(reserve = {}) {
  */
 export async function fetchPools() {
   try {
-    const res = await fetch(GRAPHQL_URL, {
+    const json = await fetchJsonWithTimeout(GRAPHQL_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -76,12 +76,6 @@ export async function fetchPools() {
         variables: { first: 300 },
       }),
     });
-
-    if (!res.ok) {
-      throw new Error(`lendle graphql request failed: ${res.status}`);
-    }
-
-    const json = await res.json();
     if (Array.isArray(json?.errors) && json.errors.length > 0) {
       throw new Error(json.errors[0]?.message || 'lendle graphql returned errors');
     }

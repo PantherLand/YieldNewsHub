@@ -1,9 +1,9 @@
 // Venus Protocol API integration
 // Docs: https://api.venus.io
 
-import fetch from 'node-fetch';
 import { config } from '../config/index.js';
 import { toNumber, normalizePercent, pickFirstNumber, pickMaxNumber, inferDirectStableToken } from './common.js';
+import { fetchJsonWithTimeout } from '../http.js';
 
 const API_BASE_URL = config.apy.sources.venusApiBaseUrl;
 const CHAIN_IDS = config.apy.sources.venusChainIds;
@@ -33,18 +33,12 @@ export async function fetchPools() {
       marketsUrl.searchParams.set('chainId', String(chainId));
       marketsUrl.searchParams.set('limit', '500');
 
-      const res = await fetch(marketsUrl.toString(), {
+      const json = await fetchJsonWithTimeout(marketsUrl.toString(), {
         headers: {
           'User-Agent': 'YieldNewsHub/0.1',
           'accept-version': 'stable',
         },
       });
-
-      if (!res.ok) {
-        throw new Error(`venus api request failed: ${res.status}`);
-      }
-
-      const json = await res.json();
       const markets = Array.isArray(json?.result)
         ? json.result
         : Array.isArray(json?.data?.result)

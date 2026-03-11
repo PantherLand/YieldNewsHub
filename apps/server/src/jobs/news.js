@@ -1,7 +1,8 @@
 import Parser from 'rss-parser';
-import fetch from 'node-fetch';
 import { prisma } from '../db.js';
+import { config } from '../config/index.js';
 import { IMPORTANT_KEYWORDS } from '../constants/index.js';
+import { fetchTextWithTimeout } from '../http.js';
 
 const parser = new Parser({
   // Some feeds (e.g. SEC) may require a user agent.
@@ -46,20 +47,18 @@ export async function pollNewsOnce({ pushFn } = {}) {
 
   for (const s of sources) {
     try {
-      // rss-parser uses node-fetch internally; but some feeds need manual fetch. We'll try parser first.
-      let feed;
-      try {
-        feed = await parser.parseURL(s.url);
-      } catch {
-        const res = await fetch(s.url, {
+      // Always fetch RSS manually with timeout, then parse XML.
+      const xml = await fetchTextWithTimeout(
+        s.url,
+        {
           headers: {
             'User-Agent': 'YieldNewsHub/0.1',
             Accept: 'application/rss+xml,application/xml,text/xml;q=0.9,*/*;q=0.8',
           },
-        });
-        const xml = await res.text();
-        feed = await parser.parseString(xml);
-      }
+        },
+        config.network.rssTimeoutMs
+      );
+      const feed = await parser.parseString(xml);
 
       let newItems = 0;
       let updatedItems = 0;

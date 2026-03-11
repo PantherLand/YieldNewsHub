@@ -1,7 +1,7 @@
-import fetch from 'node-fetch';
 import { analyzeSymbol } from '../apy-intelligence.js';
 import { prisma } from '../db.js';
 import { cache, TTL, CacheKey } from '../cache.js';
+import { fetchJsonWithTimeout } from '../http.js';
 
 const LLAMA_POOLS_API = 'https://yields.llama.fi/pools';
 
@@ -197,14 +197,9 @@ export async function getLlamaPools() {
 
   // Fallback: fetch from external API if database is empty
   console.warn('[strategy] Database empty, falling back to external API');
-  const res = await fetch(LLAMA_POOLS_API, {
+  const json = await fetchJsonWithTimeout(LLAMA_POOLS_API, {
     headers: { 'User-Agent': 'YieldNewsHub/0.1 strategy' },
   });
-  if (!res.ok) {
-    throw new Error(`failed to fetch pools: ${res.status}`);
-  }
-
-  const json = await res.json();
   const rawPools = Array.isArray(json?.data) ? json.data : [];
   const pools = rawPools.map((p) => normalizePool(p));
 

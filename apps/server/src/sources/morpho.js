@@ -1,10 +1,10 @@
 // Morpho Protocol API integration
 // Docs: https://api.morpho.org/graphql
 
-import fetch from 'node-fetch';
 import { config } from '../config/index.js';
 import { analyzeSymbol } from '../apy-intelligence.js';
 import { inferDirectStableToken } from './common.js';
+import { fetchJsonWithTimeout } from '../http.js';
 
 const GRAPHQL_URL = config.apy.sources.morphoGraphqlUrl;
 const CHAIN_IDS = config.apy.sources.morphoChainIds;
@@ -61,7 +61,7 @@ function buildVaultUrl(address, chainName = '') {
  */
 export async function fetchPools() {
   try {
-    const res = await fetch(GRAPHQL_URL, {
+    const json = await fetchJsonWithTimeout(GRAPHQL_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -72,12 +72,6 @@ export async function fetchPools() {
         variables: { first: 500, chainIds: CHAIN_IDS },
       }),
     });
-
-    if (!res.ok) {
-      throw new Error(`morpho api request failed: ${res.status}`);
-    }
-
-    const json = await res.json();
     if (Array.isArray(json?.errors) && json.errors.length > 0) {
       throw new Error(json.errors[0]?.message || 'morpho api returned graphql errors');
     }
