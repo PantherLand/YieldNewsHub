@@ -242,6 +242,7 @@ export async function pollApyOnce() {
     ]);
 
     const pools = Array.isArray(defillamaRes?.data) ? defillamaRes.data : [];
+    const defillamaRawCount = pools.length;
     const morphoSupplementPools = officialPools.morpho || [];
     const venusSupplementPools = officialPools.venus || [];
     const lendleSupplementPools = officialPools.lendle || [];
@@ -272,31 +273,43 @@ export async function pollApyOnce() {
       });
     }
 
-    const basePools = pools.filter((p) => {
-      const project = String(p?.project || '').toLowerCase();
-      // When we have official API data, skip DeFiLlama data for that protocol
-      if (morphoSupplementPools.length > 0 && isMorphoFamilyProject(project)) return false;
-      if (venusSupplementPools.length > 0 && isVenusFamilyProject(project)) return false;
-      if (lendleSupplementPools.length > 0 && isLendleFamilyProject(project)) return false;
-      return true;
-    });
-    const candidatePools = [
-      ...basePools,
-      ...morphoSupplementPools,
-      ...venusSupplementPools,
-      ...lendleSupplementPools,
-    ];
+    const passesPoolFilters = (pool) => (
+      isAllowedProject(pool.project, pool.chain)
+      && isStableOnlyPool(pool)
+      && passesApyThreshold(pool)
+      && (pool.tvlUsd ?? 0) >= 1_000_000
+    );
 
-    // pick direct stablecoin pools only (USDC/USDT/USDE/DAI)
-    // with: whitelisted project, TVL >= $1M, APY threshold (default 3%, some core lending lower)
-    // sort by apy desc, keep more rows for frontend filtering and routing
-    const ranked = candidatePools
-      .filter((p) => isAllowedProject(p.project, p.chain))
-      .filter((p) => isStableOnlyPool(p))
-      .filter((p) => passesApyThreshold(p))
-      .filter((p) => (p.tvlUsd ?? 0) >= 1_000_000)
-      .sort((a, b) => (b.apy ?? 0) - (a.apy ?? 0));
+    // Build ranked list with a single pass to reduce transient array allocations.
+    const ranked = [];
+    let baseCandidateCount = 0;
+
+    for (const pool of pools) {
+      const project = String(pool?.project || '').toLowerCase();
+      // When we have official API data, skip DeFiLlama data for that protocol.
+      if (morphoSupplementPools.length > 0 && isMorphoFamilyProject(project)) continue;
+      if (venusSupplementPools.length > 0 && isVenusFamilyProject(project)) continue;
+      if (lendleSupplementPools.length > 0 && isLendleFamilyProject(project)) continue;
+
+      baseCandidateCount += 1;
+      if (passesPoolFilters(pool)) ranked.push(pool);
+    }
+
+    for (const pool of morphoSupplementPools) {
+      if (passesPoolFilters(pool)) ranked.push(pool);
+    }
+    for (const pool of venusSupplementPools) {
+      if (passesPoolFilters(pool)) ranked.push(pool);
+    }
+    for (const pool of lendleSupplementPools) {
+      if (passesPoolFilters(pool)) ranked.push(pool);
+    }
+
+    ranked.sort((a, b) => (b.apy ?? 0) - (a.apy ?? 0));
     const filtered = selectDiverseTopPools(ranked, 50);
+
+    // Hint GC by dropping large feed arrays ASAP.
+    pools.length = 0;
 
     for (const p of filtered) {
       const externalId = p.pool;
@@ -362,11 +375,11 @@ export async function pollApyOnce() {
     return {
       ok: true,
       counts: {
-        defillamaRaw: pools.length,
+        defillamaRaw: defillamaRawCount,
         morphoSupplement: morphoSupplementPools.length,
         venusSupplement: venusSupplementPools.length,
         lendleSupplement: lendleSupplementPools.length,
-        candidate: candidatePools.length,
+        candidate: baseCandidateCount + morphoSupplementPools.length + venusSupplementPools.length + lendleSupplementPools.length,
         ranked: ranked.length,
         final: filtered.length,
       },

@@ -63,7 +63,11 @@ export async function pollNewsOnce({ pushFn } = {}) {
       let newItems = 0;
       let updatedItems = 0;
 
-      for (const item of feed.items || []) {
+      const sourceItems = Array.isArray(feed.items)
+        ? feed.items.slice(0, config.news.maxItemsPerSource)
+        : [];
+
+      for (const item of sourceItems) {
         const url = item.link || item.guid;
         if (!url) continue;
 

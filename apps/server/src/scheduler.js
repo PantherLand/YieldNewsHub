@@ -5,6 +5,7 @@ import { pollApyOnce } from './jobs/apy.js';
 import { pushTelegram } from './telegram.js';
 import { refreshAllStrategies } from './strategies/index.js';
 import { cache } from './cache.js';
+import { exitIfRssThresholdExceeded } from './process-monitor.js';
 
 const runningJobs = new Set();
 
@@ -21,6 +22,8 @@ function logMemoryUsage() {
       + `arrayBuffers=${formatMemoryMb(memory.arrayBuffers)} uptime=${Math.floor(process.uptime())}s `
       + `cacheTotal=${cacheStats.total} cacheValid=${cacheStats.valid} cacheExpired=${cacheStats.expired}`
   );
+
+  exitIfRssThresholdExceeded('memory-log');
 }
 
 async function runExclusiveJob(jobName, jobFn) {

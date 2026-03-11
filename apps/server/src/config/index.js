@@ -56,6 +56,11 @@ export const config = {
     rssTimeoutMs: getPositiveInteger(process.env.RSS_TIMEOUT_MS, 20_000),
   },
 
+  // News ingestion settings
+  news: {
+    maxItemsPerSource: getPositiveInteger(process.env.NEWS_MAX_ITEMS_PER_SOURCE, 80),
+  },
+
   // Cache settings
   cache: {
     cexLinksTtl: 60 * 60_000, // 1 hour

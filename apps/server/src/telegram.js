@@ -28,5 +28,7 @@ export async function pushTelegram(text) {
     return { ok: false, status: res.status, body };
   }
 
+  // Ensure response body is consumed so resources are released promptly.
+  await res.text().catch(() => '');
   return { ok: true };
 }

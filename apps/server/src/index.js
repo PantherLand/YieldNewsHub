@@ -6,6 +6,7 @@ import { config } from './config/index.js';
 import { errorHandler } from './api-utils.js';
 import { ensureSeedData } from './bootstrap.js';
 import { startScheduler, runInitialFetch } from './scheduler.js';
+import { exitIfRssThresholdExceeded } from './process-monitor.js';
 
 // Routes
 import {
@@ -30,17 +31,15 @@ app.use(
 
 // Health check
 app.get('/healthz', (_req, res) => {
-  const rssBytes = process.memoryUsage().rss;
-  const rssMb = Number((rssBytes / (1024 * 1024)).toFixed(1));
-  const thresholdMb = config.monitoring.rssExitThresholdMb;
-  const overThreshold = Number.isFinite(thresholdMb) && rssMb >= thresholdMb;
+  const threshold = exitIfRssThresholdExceeded('healthz');
+  const { rssMb, thresholdMb, exceeded } = threshold;
 
-  if (overThreshold) {
+  if (exceeded) {
     return res.status(507).json({
       success: false,
       data: {
         ok: false,
-        reason: 'rss_threshold_exceeded',
+        reason: 'rss_threshold_exceeded_exit_scheduled',
         rssMb,
         thresholdMb,
       },
