@@ -1,6 +1,6 @@
 import { theme } from './theme.js';
 
-// CSS Animations and Global Styles
+// CSS Animations and Global Styles - Monochrome + Neon Purple
 export const globalStyles = `
   @keyframes spin {
     from { transform: rotate(0deg); }
@@ -8,8 +8,8 @@ export const globalStyles = `
   }
 
   @keyframes glowPulse {
-    0%, 100% { box-shadow: 0 0 20px rgba(168, 85, 247, 0.3); }
-    50% { box-shadow: 0 0 30px rgba(168, 85, 247, 0.5), 0 0 60px rgba(6, 182, 212, 0.2); }
+    0%, 100% { box-shadow: 0 0 20px rgba(168, 85, 247, 0.2); }
+    50% { box-shadow: 0 0 35px rgba(168, 85, 247, 0.4); }
   }
 
   @keyframes scanlineMove {
@@ -17,14 +17,38 @@ export const globalStyles = `
     100% { background-position: 0 100vh; }
   }
 
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(-10px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
   * {
     box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
   }
 
   body {
     margin: 0;
     padding: 0;
     background: ${theme.colors.bgDeep};
+    font-family: ${theme.fonts.sans};
+    color: ${theme.colors.textPrimary};
+    line-height: ${theme.lineHeights.normal};
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   /* Custom selection */
@@ -33,18 +57,33 @@ export const globalStyles = `
     color: ${theme.colors.textPrimary};
   }
 
+  /* Focus states */
+  *:focus-visible {
+    outline: 2px solid ${theme.colors.accent};
+    outline-offset: 2px;
+  }
+
   input:focus {
-    border-color: ${theme.colors.borderHover} !important;
-    box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.15), ${theme.colors.glowPurple};
+    border-color: ${theme.colors.borderAccent} !important;
+    box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.15);
+  }
+
+  /* Button interactions */
+  button {
+    font-family: inherit;
   }
 
   button:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: ${theme.colors.glowPurple};
+    transform: translateY(-1px);
   }
 
   button:active:not(:disabled) {
     transform: translateY(0);
+  }
+
+  button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 
   .logo-home-link:hover,
@@ -53,7 +92,18 @@ export const globalStyles = `
     box-shadow: none !important;
   }
 
-  /* Scrollbar */
+  /* Links */
+  a {
+    color: ${theme.colors.accent};
+    text-decoration: none;
+    transition: ${theme.transition.fast};
+  }
+
+  a:hover {
+    color: ${theme.colors.accentLight};
+  }
+
+  /* Scrollbar - Minimal monochrome */
   ::-webkit-scrollbar {
     width: 8px;
     height: 8px;
@@ -64,18 +114,30 @@ export const globalStyles = `
   }
 
   ::-webkit-scrollbar-thumb {
-    background: linear-gradient(180deg, ${theme.colors.cyberPurple} 0%, ${theme.colors.electricCyan} 100%);
+    background: ${theme.colors.gray700};
     border-radius: 4px;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: ${theme.colors.cyberPurpleLight};
+    background: ${theme.colors.accent};
   }
 
   /* Number input arrows */
   input[type="number"]::-webkit-inner-spin-button,
   input[type="number"]::-webkit-outer-spin-button {
     opacity: 1;
+  }
+
+  /* Placeholder */
+  ::placeholder {
+    color: ${theme.colors.textMuted};
+    opacity: 1;
+  }
+
+  /* Headless UI transitions */
+  [data-headlessui-state="open"] {
+    opacity: 1;
+    transform: translateY(0);
   }
 
   /* ==================== MOBILE RESPONSIVE STYLES ==================== */
